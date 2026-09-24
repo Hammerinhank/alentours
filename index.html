@@ -2,17 +2,652 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Alentours</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background:#f5f5f7; color:#1d1d1f; text-align:center; padding:60px 20px; }
-  h1 { color:#0071e3; }
-  p { color:#86868b; }
+:root{
+  --papier:#EEF1E6; --surface:#FFFFFF; --encre:#1F2B25; --doux:#5B6B61;
+  --anneau:#C9D1BD; --trait:#6F7E74;
+  --village:#FFFFFF; --bourg:#E9B949; --ville:#C4462C; --moi:#2A6FB5;
+  --police:"Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --papier:#18201C; --surface:#232C27; --encre:#E6EADF; --doux:#9AA89E;
+    --anneau:#303B35; --trait:#8C9A90;
+    --village:#DCE3D6; --bourg:#D9A73A; --ville:#D2573C; --moi:#5AA0E6;
+  }
+}
+:root[data-theme="dark"]{
+  --papier:#18201C; --surface:#232C27; --encre:#E6EADF; --doux:#9AA89E;
+  --anneau:#303B35; --trait:#8C9A90;
+  --village:#DCE3D6; --bourg:#D9A73A; --ville:#D2573C; --moi:#5AA0E6;
+}
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+html,body{ height:100%; margin:0; }
+body{
+  background:var(--papier); color:var(--encre); font-family:var(--police);
+  font-size:17px; display:flex; flex-direction:column; overflow:hidden;
+}
+button,select,input{ font:inherit; color:inherit; }
+button{ cursor:pointer; }
+:focus-visible{ outline:3px solid var(--moi); outline-offset:2px; }
+
+/* En-tête */
+.barre{ display:flex; align-items:center; gap:12px; padding:10px 16px 8px; }
+.titre{ flex:1; min-width:0; }
+.titre h1{ margin:0; font-size:28px; font-weight:700; letter-spacing:-.01em; line-height:1; }
+.source{ display:block; margin-top:4px; font-size:15px; color:var(--doux); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.source.sim{ color:var(--ville); font-weight:600; }
+.version{
+  border:0; border-radius:999px; background:var(--moi); color:#fff;
+  font-weight:700; font-size:17px; padding:7px 14px; flex-shrink:0;
+}
+.reel{
+  border:2px solid var(--ville); background:transparent; color:var(--ville);
+  border-radius:999px; padding:4px 10px; font-weight:600; font-size:15px; flex-shrink:0;
+}
+
+/* Vues */
+main{ flex:1; min-height:0; position:relative; }
+.vue{ position:absolute; inset:0; display:none; flex-direction:column; }
+.vue.active{ display:flex; }
+
+/* Radar */
+.zoneRadar{ flex:1; min-height:0; position:relative; }
+#radar{ width:100%; height:100%; display:block; touch-action:manipulation; }
+.etat{
+  position:absolute; left:16px; right:16px; top:8px; z-index:2;
+  background:var(--surface); border-left:4px solid var(--moi);
+  padding:10px 12px; font-size:16px; box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+.etat.erreur{ border-left-color:var(--ville); }
+.anneau{ fill:none; stroke:var(--anneau); stroke-width:1.5; stroke-dasharray:3 5; }
+.etqAnneau{ fill:var(--doux); font-size:12px; }
+.nord{ fill:var(--doux); font-size:15px; font-weight:700; text-anchor:middle; }
+.ligne{ stroke:var(--trait); stroke-width:1.6; opacity:.75; }
+.sphere{ stroke:var(--encre); stroke-width:1.5; }
+.sphere.village{ fill:var(--village); }
+.sphere.bourg{ fill:var(--bourg); }
+.sphere.ville{ fill:var(--ville); }
+.groupe{ cursor:pointer; }
+.nom{ fill:var(--encre); font-size:15px; font-weight:700; paint-order:stroke; stroke:var(--papier); stroke-width:4px; stroke-linejoin:round; }
+.dist{ fill:var(--doux); font-size:13px; paint-order:stroke; stroke:var(--papier); stroke-width:4px; stroke-linejoin:round; }
+.moi{ fill:var(--moi); stroke:var(--papier); stroke-width:3; }
+.pouls{ fill:var(--moi); opacity:.25; transform-box:fill-box; transform-origin:center; animation:pouls 2.4s ease-out infinite; }
+@keyframes pouls{ from{ transform:scale(1); opacity:.35; } to{ transform:scale(3.2); opacity:0; } }
+@media (prefers-reduced-motion: reduce){ .pouls{ animation:none; } }
+
+.reglages{ display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; padding:6px 16px 8px; font-size:15px; }
+.reglages label{ display:flex; align-items:center; gap:6px; color:var(--doux); }
+.reglages select{ background:var(--surface); border:1px solid var(--anneau); border-radius:6px; padding:3px 6px; color:var(--encre); }
+.legende{ display:flex; gap:12px; width:100%; color:var(--doux); font-size:14px; }
+.legende span{ display:flex; align-items:center; gap:5px; }
+.pastille{ width:12px; height:12px; border-radius:50%; border:1.5px solid var(--encre); display:inline-block; }
+
+/* Carte */
+.recherche{ position:relative; padding:8px 16px; }
+.recherche input{
+  width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--anneau);
+  background:var(--surface); font-size:17px;
+}
+#resultats{
+  list-style:none; margin:0; padding:0; position:absolute; left:16px; right:16px; top:100%;
+  z-index:1000; background:var(--surface); box-shadow:0 6px 18px rgba(0,0,0,.18); border-radius:0 0 8px 8px;
+}
+#resultats button{ width:100%; text-align:left; border:0; background:transparent; padding:10px 12px; border-top:1px solid var(--anneau); }
+#resultats small{ color:var(--doux); }
+#carte{ flex:1; min-height:0; }
+.aide{ margin:0; padding:6px 16px 8px; font-size:15px; color:var(--doux); }
+.leaflet-tooltip.etq{
+  background:transparent; border:0; box-shadow:none; padding:0;
+  font-family:var(--police); font-weight:700; font-size:14px; color:#1F2B25;
+  text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
+}
+.leaflet-tooltip.etq::before{ display:none; }
+
+/* Onglets */
+.onglets{ display:flex; border-top:1px solid var(--anneau); background:var(--surface); }
+.onglets button{ flex:1; border:0; background:transparent; padding:12px 0 10px; font-size:18px; font-weight:600; color:var(--doux); }
+.onglets button.actif{ color:var(--moi); box-shadow:inset 0 3px 0 var(--moi); }
+
+/* Fiche commune */
+.fiche{
+  position:fixed; left:0; right:0; bottom:0; z-index:2000; background:var(--surface);
+  padding:16px 20px calc(18px + env(safe-area-inset-bottom,0px));
+  border-radius:16px 16px 0 0; box-shadow:0 -6px 24px rgba(0,0,0,.2);
+}
+.fiche h2{ margin:0 36px 2px 0; font-size:26px; line-height:1.1; }
+.fiche .dep{ margin:0 0 10px; color:var(--doux); }
+.fiche dl{ display:grid; grid-template-columns:auto 1fr; gap:4px 14px; margin:0 0 14px; }
+.fiche dt{ color:var(--doux); }
+.fiche dd{ margin:0; font-weight:600; }
+.fermer{ position:absolute; top:12px; right:14px; border:0; background:transparent; font-size:26px; line-height:1; color:var(--doux); }
+.btnSecondaire{ border:1px solid var(--moi); color:var(--moi); background:transparent; border-radius:8px; padding:8px 14px; font-weight:600; }
+
+/* Historique des versions */
+dialog{
+  border:0; border-radius:14px; padding:18px 20px; max-width:min(92vw,480px); width:100%;
+  background:var(--surface); color:var(--encre); max-height:80vh;
+}
+dialog::backdrop{ background:rgba(0,0,0,.4); }
+dialog h2{ margin:0 0 10px; font-size:24px; }
+.histo h3{ margin:14px 0 4px; font-size:18px; }
+.histo h3 small{ color:var(--doux); font-weight:400; }
+.histo ul{ margin:0; padding-left:20px; line-height:1.4; }
+.piedDialog{ display:flex; gap:10px; justify-content:space-between; flex-wrap:wrap; margin-top:18px; }
+.btnPrincipal{ border:0; background:var(--moi); color:#fff; border-radius:8px; padding:8px 16px; font-weight:600; }
 </style>
 </head>
 <body>
-<h1>Alentours</h1>
-<p>Nouvelle application créée avec Le Déployeur.</p>
-<p>Déploie ton code depuis l'étape 3 pour remplacer cette page.</p>
+
+<header class="barre">
+  <div class="titre">
+    <h1>Alentours</h1>
+    <span id="source" class="source">Recherche de votre position…</span>
+  </div>
+  <button id="btnReel" class="reel" hidden>Revenir à ma position</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.0</button>
+</header>
+
+<main>
+  <section id="vueRadar" class="vue active">
+    <div class="zoneRadar">
+      <div id="etat" class="etat" hidden></div>
+      <svg id="radar" role="img" aria-label="Communes proches de votre position"></svg>
+    </div>
+    <div class="reglages">
+      <label>Communes
+        <select id="selNombre">
+          <option value="6">6</option><option value="8">8</option><option value="10">10</option>
+          <option value="12">12</option><option value="16">16</option>
+        </select>
+      </label>
+      <label>Habitants
+        <select id="selPop">
+          <option value="0">toutes</option><option value="200">200 et +</option>
+          <option value="1000">1 000 et +</option><option value="5000">5 000 et +</option>
+          <option value="20000">20 000 et +</option>
+        </select>
+      </label>
+      <div class="legende">
+        <span><i class="pastille" style="background:var(--village)"></i>moins de 2 000 hab.</span>
+        <span><i class="pastille" style="background:var(--bourg)"></i>2 000 à 20 000</span>
+        <span><i class="pastille" style="background:var(--ville)"></i>plus de 20 000</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="vueCarte" class="vue">
+    <div class="recherche">
+      <input id="rech" type="search" placeholder="Aller à une commune…" autocomplete="off">
+      <ul id="resultats"></ul>
+    </div>
+    <div id="carte"></div>
+    <p class="aide">Touchez la carte pour vous y placer, comme si vous étiez à cet endroit.</p>
+  </section>
+</main>
+
+<nav class="onglets">
+  <button data-vue="vueRadar" class="actif">Radar</button>
+  <button data-vue="vueCarte">Carte</button>
+</nav>
+
+<div id="fiche" class="fiche" hidden>
+  <button class="fermer" id="ficheFermer" aria-label="Fermer">×</button>
+  <h2 id="ficheNom"></h2>
+  <p class="dep" id="ficheDep"></p>
+  <dl>
+    <dt>Distance</dt><dd id="ficheDist"></dd>
+    <dt>Direction</dt><dd id="ficheDir"></dd>
+    <dt>Population</dt><dd id="fichePop"></dd>
+  </dl>
+  <button class="btnSecondaire" id="ficheCarte">Voir sur la carte</button>
+</div>
+
+<dialog id="dlgVersion">
+  <h2>Historique des versions</h2>
+  <div id="histo" class="histo"></div>
+  <div class="piedDialog">
+    <button class="btnSecondaire" id="btnRecharger">Recharger la liste des communes</button>
+    <button class="btnPrincipal" id="btnFermerVersion">Fermer</button>
+  </div>
+</dialog>
+
+<script>
+/* =========================================================
+   Alentours — version et historique
+   ========================================================= */
+const VERSION = "1.0";
+const HISTORIQUE = [
+  { v: "1.0", date: "24/09/2026", notes: [
+    "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
+    "Onglet Carte pour se placer n'importe où en France (toucher la carte ou chercher une commune).",
+    "Communes INSEE via geo.api.gouv.fr, mises en cache sur l'appareil."
+  ]}
+];
+
+const CLE_CACHE = "alentours_communes_v1";
+const CLE_REGLAGES = "alentours_reglages";
+const CLE_POSITION = "alentours_position";
+const URL_COMMUNES = "https://geo.api.gouv.fr/communes?fields=nom,centre,population,codeDepartement&format=json&geometry=centre";
+const NS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+
+const etat = {
+  communes: null,      // [nom, lat, lon, population, département]
+  noms: null,          // noms normalisés pour la recherche
+  gps: null, sim: null, mode: "gps",
+  nb: 10, popMin: 0,
+  selection: [], dernierCalcul: null,
+  carte: null, couche: null, communeFiche: null
+};
+
+/* ---------- Stockage ---------- */
+function lireJSON(cle, def){ try{ const v = localStorage.getItem(cle); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
+function ecrireJSON(cle, v){ try{ localStorage.setItem(cle, JSON.stringify(v)); return true; }catch(e){ return false; } }
+
+/* ---------- Utilitaires ---------- */
+function afficherEtat(txt, erreur){
+  const e = $("etat");
+  e.textContent = txt || "";
+  e.classList.toggle("erreur", !!erreur);
+  e.hidden = !txt;
+}
+function norm(s){ return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[-'’]/g, " "); }
+function nf(n){ return n.toLocaleString("fr-FR"); }
+function formatDistance(d){
+  if(d < 1) return Math.round(d * 1000 / 10) * 10 + " m";
+  if(d < 10) return d.toFixed(1).replace(".", ",") + " km";
+  return Math.round(d) + " km";
+}
+function directionTexte(cap){
+  const dirs = ["au nord", "au nord-est", "à l'est", "au sud-est", "au sud", "au sud-ouest", "à l'ouest", "au nord-ouest"];
+  return dirs[Math.round(cap / 45) % 8];
+}
+function distanceKm(lat1, lon1, lat2, lon2){
+  const r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*r) * Math.cos(lat2*r) * Math.sin(dLon/2)**2;
+  return 2 * 6371 * Math.asin(Math.sqrt(a));
+}
+function cap(lat1, lon1, lat2, lon2){
+  const r = Math.PI / 180, p1 = lat1*r, p2 = lat2*r, dl = (lon2 - lon1)*r;
+  const y = Math.sin(dl) * Math.cos(p2);
+  const x = Math.cos(p1)*Math.sin(p2) - Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
+  return (Math.atan2(y, x) / r + 360) % 360;
+}
+function rayonSphere(pop){ return 5 + 3.2 * Math.log10(Math.max(pop, 10)); }
+function classeTaille(pop){ return pop >= 20000 ? "ville" : pop >= 2000 ? "bourg" : "village"; }
+function couleur(nom){ return getComputedStyle(document.documentElement).getPropertyValue("--" + nom).trim(); }
+function positionCourante(){ return etat.mode === "sim" ? etat.sim : etat.gps; }
+
+/* ---------- Données des communes ---------- */
+async function chargerCommunes(forcer){
+  if(!forcer){
+    const c = lireJSON(CLE_CACHE, null);
+    if(c && Array.isArray(c.d) && c.d.length > 1000) return c.d;
+  }
+  afficherEtat("Téléchargement de la liste des communes…");
+  const r = await fetch(URL_COMMUNES);
+  if(!r.ok) throw new Error("le service geo.api.gouv.fr a répondu " + r.status);
+  let texte;
+  if(r.body && r.body.getReader){
+    const lecteur = r.body.getReader(), morceaux = [];
+    let recu = 0;
+    for(;;){
+      const { done, value } = await lecteur.read();
+      if(done) break;
+      morceaux.push(value); recu += value.length;
+      afficherEtat(`Téléchargement des communes : ${(recu / 1048576).toFixed(1).replace(".", ",")} Mo reçus…`);
+    }
+    const tout = new Uint8Array(recu); let o = 0;
+    for(const m of morceaux){ tout.set(m, o); o += m.length; }
+    texte = new TextDecoder().decode(tout);
+  } else {
+    texte = await r.text();
+  }
+  const brut = JSON.parse(texte), total = brut.length, d = [];
+  for(let i = 0; i < total; i++){
+    const c = brut[i];
+    if(!c.centre || !c.centre.coordinates) continue;
+    const [lon, lat] = c.centre.coordinates;
+    d.push([c.nom, +lat.toFixed(4), +lon.toFixed(4), c.population || 0, c.codeDepartement || ""]);
+  }
+  afficherEtat(`${nf(d.length)} communes retenues sur ${nf(total)} reçues.`);
+  ecrireJSON(CLE_CACHE, { date: Date.now(), d });
+  return d;
+}
+
+function calculerVoisines(pos){
+  const { lat, lon } = pos, k = Math.cos(lat * Math.PI / 180), C = etat.communes, liste = [];
+  for(let i = 0; i < C.length; i++){
+    const c = C[i];
+    if(c[3] < etat.popMin) continue;
+    const dy = c[1] - lat, dx = (c[2] - lon) * k;
+    liste.push([dx*dx + dy*dy, i]);
+  }
+  liste.sort((a, b) => a[0] - b[0]);
+  return liste.slice(0, etat.nb).map(([, i]) => {
+    const c = C[i];
+    return { nom: c[0], lat: c[1], lon: c[2], pop: c[3], dep: c[4],
+             d: distanceKm(lat, lon, c[1], c[2]), cap: cap(lat, lon, c[1], c[2]) };
+  });
+}
+
+/* ---------- Mise à jour générale ---------- */
+function rafraichir(force){
+  majSource();
+  const pos = positionCourante();
+  if(!pos || !etat.communes) return;
+  const dc = etat.dernierCalcul;
+  if(!force && dc && dc.nb === etat.nb && dc.popMin === etat.popMin &&
+     distanceKm(dc.lat, dc.lon, pos.lat, pos.lon) < 0.03) return;
+  etat.dernierCalcul = { lat: pos.lat, lon: pos.lon, nb: etat.nb, popMin: etat.popMin };
+  etat.selection = calculerVoisines(pos);
+  afficherEtat("");
+  dessinerRadar();
+  dessinerCarte();
+}
+
+function majSource(){
+  const s = $("source");
+  if(etat.mode === "sim"){
+    s.textContent = "Position simulée";
+    s.classList.add("sim");
+    $("btnReel").hidden = false;
+  } else {
+    s.classList.remove("sim");
+    s.textContent = etat.gps ? `Position réelle, à ${Math.round(etat.gps.prec)} m près` : "Recherche de votre position…";
+    $("btnReel").hidden = true;
+  }
+}
+
+/* ---------- Radar ---------- */
+function el(nom, attrs, parent){
+  const e = document.createElementNS(NS, nom);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+
+function paliersAnneaux(dmax){
+  const pas = [0.25, 0.5, 1, 2, 3, 5, 10, 20, 50, 100];
+  let p = pas[0];
+  for(const v of pas) if(v <= dmax / 3) p = v;
+  const res = [];
+  for(let k = 1; k * p <= dmax && res.length < 5; k++) res.push(k * p);
+  return res;
+}
+
+function dessinerRadar(){
+  const svg = $("radar");
+  const W = svg.clientWidth, H = svg.clientHeight;
+  if(!W || !H) return;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = "";
+  const pos = positionCourante(), sel = etat.selection;
+  if(!pos || !sel.length) return;
+
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 48;
+  const dmax = Math.max(...sel.map(s => s.d)) * 1.05 || 1;
+  const echelle = d => R * Math.sqrt(d / dmax);
+
+  // Anneaux de distance
+  for(const p of paliersAnneaux(dmax)){
+    const r = echelle(p);
+    el("circle", { cx, cy, r, class: "anneau" }, svg);
+    const t = el("text", { x: cx + 4, y: cy - r - 4, class: "etqAnneau" }, svg);
+    t.textContent = formatDistance(p);
+  }
+  el("text", { x: cx, y: Math.max(16, cy - R - 26), class: "nord" }, svg).textContent = "N";
+
+  // Positions (cap réel, distance en racine carrée pour aérer le centre)
+  const pts = sel.map(s => {
+    const r = echelle(s.d), a = s.cap * Math.PI / 180;
+    return { s, x: cx + r * Math.sin(a), y: cy - r * Math.cos(a), r: rayonSphere(s.pop) };
+  });
+
+  // Écartement léger des sphères qui se chevauchent
+  for(let it = 0; it < 60; it++){
+    let bouge = false;
+    for(let i = 0; i < pts.length; i++){
+      for(let j = i + 1; j < pts.length; j++){
+        const a = pts[i], b = pts[j];
+        let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+        const mini = a.r + b.r + 6;
+        if(d < mini){
+          if(d < 0.01){ dx = 1; dy = 0; d = 1; }
+          const pousse = (mini - d) / 2, ux = dx / d, uy = dy / d;
+          a.x -= ux * pousse; a.y -= uy * pousse;
+          b.x += ux * pousse; b.y += uy * pousse;
+          bouge = true;
+        }
+      }
+    }
+    for(const p of pts){
+      const dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy) || 1;
+      const dMin = p.r + 16, dMax = R + 20;
+      if(d < dMin){ p.x = cx + dx / d * dMin; p.y = cy + dy / d * dMin; }
+      if(d > dMax){ p.x = cx + dx / d * dMax; p.y = cy + dy / d * dMax; }
+    }
+    if(!bouge) break;
+  }
+
+  // Lignes
+  for(const p of pts) el("line", { x1: cx, y1: cy, x2: p.x, y2: p.y, class: "ligne" }, svg);
+
+  // Sphères
+  const occupes = [{ x1: cx - 14, y1: cy - 14, x2: cx + 14, y2: cy + 14 }];
+  for(const p of pts){
+    occupes.push({ x1: p.x - p.r, y1: p.y - p.r, x2: p.x + p.r, y2: p.y + p.r });
+    const g = el("g", { class: "groupe", tabindex: "0", role: "button", "aria-label": p.s.nom }, svg);
+    el("circle", { cx: p.x, cy: p.y, r: p.r, class: "sphere " + classeTaille(p.s.pop) }, g);
+    g.addEventListener("click", () => ouvrirFiche(p.s));
+    g.addEventListener("keydown", e => { if(e.key === "Enter") ouvrirFiche(p.s); });
+    p.g = g;
+  }
+
+  // Étiquettes placées sans chevauchement quand c'est possible
+  const chevauche = b => occupes.some(o => !(b.x2 < o.x1 || b.x1 > o.x2 || b.y2 < o.y1 || b.y1 > o.y2));
+  const dedans = b => b.x1 >= 2 && b.x2 <= W - 2 && b.y1 >= 2 && b.y2 <= H - 2;
+  for(const p of pts){
+    const l1 = p.s.nom, l2 = formatDistance(p.s.d);
+    const w = Math.max(l1.length * 7.6, l2.length * 6.8) + 4;
+    const cands = [
+      { x: p.x, y: p.y + p.r + 15, a: "middle" },
+      { x: p.x, y: p.y - p.r - 20, a: "middle" },
+      { x: p.x + p.r + 5, y: p.y - 2, a: "start" },
+      { x: p.x - p.r - 5, y: p.y - 2, a: "end" }
+    ].map(c => {
+      const x1 = c.a === "middle" ? c.x - w/2 : c.a === "start" ? c.x : c.x - w;
+      return { ...c, b: { x1, y1: c.y - 13, x2: x1 + w, y2: c.y + 17 } };
+    });
+    let choix = cands.find(c => dedans(c.b) && !chevauche(c.b)) || cands.find(c => dedans(c.b)) || cands[0];
+    occupes.push(choix.b);
+    const t = el("text", { x: choix.x, y: choix.y, "text-anchor": choix.a }, p.g);
+    const t1 = el("tspan", { x: choix.x, class: "nom" }, t); t1.textContent = l1;
+    const t2 = el("tspan", { x: choix.x, dy: 16, class: "dist" }, t); t2.textContent = l2;
+  }
+
+  // Position
+  el("circle", { cx, cy, r: 8, class: "pouls" }, svg);
+  el("circle", { cx, cy, r: 8, class: "moi" }, svg);
+}
+
+/* ---------- Fiche commune ---------- */
+function ouvrirFiche(s){
+  etat.communeFiche = s;
+  $("ficheNom").textContent = s.nom;
+  $("ficheDep").textContent = s.dep ? "Département " + s.dep : "";
+  $("ficheDist").textContent = formatDistance(s.d) + " à vol d'oiseau";
+  $("ficheDir").textContent = directionTexte(s.cap);
+  $("fichePop").textContent = s.pop ? nf(s.pop) + " habitants" : "non renseignée";
+  $("fiche").hidden = false;
+}
+function fermerFiche(){ $("fiche").hidden = true; }
+
+/* ---------- Carte ---------- */
+function initCarte(){
+  if(etat.carte) return;
+  const p = positionCourante();
+  etat.carte = L.map("carte").setView(p ? [p.lat, p.lon] : [46.6, 2.5], p ? 11 : 6);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18, attribution: "© OpenStreetMap"
+  }).addTo(etat.carte);
+  etat.couche = L.layerGroup().addTo(etat.carte);
+  etat.carte.on("click", e => placerSimulation(e.latlng.lat, e.latlng.lng));
+  dessinerCarte();
+}
+
+function dessinerCarte(){
+  if(!etat.carte) return;
+  const g = etat.couche;
+  g.clearLayers();
+  const p = positionCourante();
+  if(!p) return;
+  const encre = couleur("encre"), trait = couleur("trait");
+  for(const s of etat.selection){
+    L.polyline([[p.lat, p.lon], [s.lat, s.lon]], { color: trait, weight: 1.5, opacity: .8, dashArray: "4 4", interactive: false }).addTo(g);
+    L.circleMarker([s.lat, s.lon], {
+      radius: rayonSphere(s.pop) * .8, color: encre, weight: 1.5,
+      fillColor: couleur(classeTaille(s.pop)), fillOpacity: .95
+    }).bindTooltip(s.nom, { permanent: true, direction: "top", offset: [0, -6], className: "etq" })
+      .on("click", ev => { L.DomEvent.stopPropagation(ev); ouvrirFiche(s); })
+      .addTo(g);
+  }
+  L.circleMarker([p.lat, p.lon], { radius: 8, color: "#fff", weight: 3, fillColor: couleur("moi"), fillOpacity: 1, interactive: false }).addTo(g);
+}
+
+function placerSimulation(lat, lon){
+  etat.sim = { lat, lon };
+  etat.mode = "sim";
+  ecrireJSON(CLE_POSITION, { mode: etat.mode, sim: etat.sim });
+  rafraichir(true);
+}
+
+function revenirReel(){
+  etat.mode = "gps";
+  ecrireJSON(CLE_POSITION, { mode: etat.mode, sim: etat.sim });
+  if(!etat.gps) afficherEtat("Recherche de votre position…");
+  rafraichir(true);
+  if(etat.carte && etat.gps) etat.carte.setView([etat.gps.lat, etat.gps.lon], 11);
+}
+
+/* ---------- Recherche de commune ---------- */
+function rechercher(){
+  const q = norm($("rech").value.trim()), ul = $("resultats");
+  ul.innerHTML = "";
+  if(q.length < 2 || !etat.noms) return;
+  const res = [];
+  for(let i = 0; i < etat.noms.length; i++){
+    const k = etat.noms[i].indexOf(q);
+    if(k >= 0) res.push([k === 0 ? 0 : 1, -etat.communes[i][3], i]);
+  }
+  res.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  for(const [, , i] of res.slice(0, 8)){
+    const c = etat.communes[i];
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.innerHTML = `${c[0]} <small>(${c[4]}, ${nf(c[3])} hab.)</small>`;
+    b.addEventListener("click", () => {
+      $("rech").value = ""; ul.innerHTML = ""; $("rech").blur();
+      placerSimulation(c[1], c[2]);
+      if(etat.carte) etat.carte.setView([c[1], c[2]], 12);
+    });
+    li.appendChild(b); ul.appendChild(li);
+  }
+}
+
+/* ---------- Onglets ---------- */
+function montrerVue(id){
+  document.querySelectorAll(".vue").forEach(v => v.classList.toggle("active", v.id === id));
+  document.querySelectorAll(".onglets button").forEach(b => b.classList.toggle("actif", b.dataset.vue === id));
+  if(id === "vueCarte"){
+    initCarte();
+    setTimeout(() => etat.carte && etat.carte.invalidateSize(), 60);
+  } else {
+    dessinerRadar();
+  }
+}
+
+/* ---------- GPS ---------- */
+function demarrerGps(){
+  if(!("geolocation" in navigator)){
+    afficherEtat("Ce navigateur ne donne pas accès à la position. Placez-vous depuis l'onglet Carte.", true);
+    return;
+  }
+  navigator.geolocation.watchPosition(p => {
+    etat.gps = { lat: p.coords.latitude, lon: p.coords.longitude, prec: p.coords.accuracy };
+    if(etat.mode === "gps") rafraichir(false); else majSource();
+  }, err => {
+    const raisons = { 1: "l'accès à la localisation est refusé", 2: "la position est introuvable", 3: "le délai est dépassé" };
+    if(etat.mode === "gps")
+      afficherEtat(`Position indisponible : ${raisons[err.code] || err.message}. Autorisez la localisation, ou placez-vous depuis l'onglet Carte.`, true);
+  }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+}
+
+/* ---------- Historique des versions ---------- */
+function remplirHistorique(){
+  $("histo").innerHTML = HISTORIQUE.slice().reverse().map(h =>
+    `<h3>v${h.v} <small>${h.date}</small></h3><ul>${h.notes.map(n => `<li>${n}</li>`).join("")}</ul>`
+  ).join("");
+}
+
+/* ---------- Démarrage ---------- */
+async function demarrer(){
+  $("btnVersion").textContent = "v" + VERSION;
+  remplirHistorique();
+
+  const reg = lireJSON(CLE_REGLAGES, {});
+  if(reg.nb) etat.nb = reg.nb;
+  if(reg.popMin !== undefined) etat.popMin = reg.popMin;
+  $("selNombre").value = String(etat.nb);
+  $("selPop").value = String(etat.popMin);
+  const posSauvee = lireJSON(CLE_POSITION, null);
+  if(posSauvee && posSauvee.sim){ etat.sim = posSauvee.sim; etat.mode = posSauvee.mode === "sim" ? "sim" : "gps"; }
+
+  $("selNombre").addEventListener("change", e => { etat.nb = +e.target.value; ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin }); rafraichir(true); });
+  $("selPop").addEventListener("change", e => { etat.popMin = +e.target.value; ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin }); rafraichir(true); });
+  document.querySelectorAll(".onglets button").forEach(b => b.addEventListener("click", () => montrerVue(b.dataset.vue)));
+  $("btnReel").addEventListener("click", revenirReel);
+  $("btnVersion").addEventListener("click", () => $("dlgVersion").showModal());
+  $("btnFermerVersion").addEventListener("click", () => $("dlgVersion").close());
+  $("btnRecharger").addEventListener("click", async () => {
+    $("dlgVersion").close();
+    try{
+      etat.communes = await chargerCommunes(true);
+      etat.noms = etat.communes.map(c => norm(c[0]));
+      rafraichir(true);
+    }catch(e){ afficherEtat("Rechargement impossible : " + e.message + ".", true); }
+  });
+  $("ficheFermer").addEventListener("click", fermerFiche);
+  $("ficheCarte").addEventListener("click", () => {
+    const s = etat.communeFiche; fermerFiche(); montrerVue("vueCarte");
+    if(s && etat.carte) etat.carte.setView([s.lat, s.lon], 12);
+  });
+  $("rech").addEventListener("input", rechercher);
+  window.addEventListener("resize", () => { dessinerRadar(); if(etat.carte) etat.carte.invalidateSize(); });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { dessinerRadar(); dessinerCarte(); });
+
+  majSource();
+  demarrerGps();
+  try{
+    etat.communes = await chargerCommunes(false);
+    etat.noms = etat.communes.map(c => norm(c[0]));
+    if(!positionCourante()) afficherEtat("Recherche de votre position…");
+    rafraichir(true);
+  }catch(e){
+    afficherEtat("Impossible de charger la liste des communes (" + e.message + "). Vérifiez la connexion puis rechargez la page.", true);
+  }
+}
+demarrer();
+</script>
 </body>
 </html>
