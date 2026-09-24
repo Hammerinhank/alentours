@@ -204,7 +204,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.3</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.4</button>
 </header>
 
 <main>
@@ -224,7 +224,8 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
         <select id="selPop">
           <option value="0">toutes</option><option value="200">200 et +</option>
           <option value="1000">1 000 et +</option><option value="5000">5 000 et +</option>
-          <option value="20000">20 000 et +</option>
+          <option value="20000">20 000 et +</option><option value="200000">200 000 et +</option>
+          <option value="1000000">1 000 000 et +</option><option value="5000000">5 000 000 et +</option>
         </select>
       </label>
       <div class="legende">
@@ -332,7 +333,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.3";
+const VERSION = "1.4";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -356,6 +357,10 @@ const HISTORIQUE = [
     "Même barre sous le choix du pays pendant le chargement d'une liste.",
     "Taille des téléchargements mémorisée pour afficher un pourcentage réel ; barre animée tant que la taille est inconnue.",
     "Réglages : état de la liste suivi en direct (en cours, étape, nombre de localités, erreur en rouge avec la marche à suivre)."
+  ]},
+  { v: "1.4", date: "24/09/2026", notes: [
+    "Dépôt des données : « alentours » au lieu de « entourages » (réglage déjà enregistré corrigé automatiquement).",
+    "Filtre Habitants : ajout de « 200 000 et + », « 1 000 000 et + » et « 5 000 000 et + »."
   ]}
 ];
 
@@ -374,7 +379,7 @@ const PAYS = {
   fr: { nom: "France", dans: "en France", drapeau: "🇫🇷", centre: [46.6, 2.5], zoom: 6, fichier: "lieux-fr.json", lieux: "communes" },
   vn: { nom: "Vietnam", dans: "au Vietnam", drapeau: "🇻🇳", centre: [16.0, 106.5], zoom: 5, fichier: "lieux-vn.json", lieux: "localités" }
 };
-const DEPOT_DEFAUT = { owner: "Hammerinhank", repo: "entourages", branche: "main", token: "" };
+const DEPOT_DEFAUT = { owner: "Hammerinhank", repo: "alentours", branche: "main", token: "" };
 const NS = "http://www.w3.org/2000/svg";
 const DUREE_ANIM = 800;
 const $ = id => document.getElementById(id);
@@ -1195,6 +1200,7 @@ function demarrer(){
     etat.mode = posSauvee.mode === "sim" && etat.sims[etat.pays] ? "sim" : "gps";
   }
   etat.depot = { ...DEPOT_DEFAUT, ...lireJSON(CLE_DEPOT, {}) };
+  if(etat.depot.repo === "entourages"){ etat.depot.repo = "alentours"; ecrireJSON(CLE_DEPOT, etat.depot); } // correction du nom de dépôt (v1.4)
   $("depOwner").value = etat.depot.owner;
   $("depRepo").value = etat.depot.repo;
   $("depBranche").value = etat.depot.branche;
