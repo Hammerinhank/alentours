@@ -204,7 +204,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.5</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.6</button>
 </header>
 
 <main>
@@ -333,7 +333,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.5";
+const VERSION = "1.6";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -364,6 +364,10 @@ const HISTORIQUE = [
   ]},
   { v: "1.5", date: "24/09/2026", notes: [
     "Filtre Habitants : « 5 000 000 et + » remplacé par « 500 000 et + »."
+  ]},
+  { v: "1.6", date: "24/09/2026", notes: [
+    "Correction : avec un grand seuil de population, le radar se vidait à tort quand la grande ville la plus proche était à plus de 100 km.",
+    "L'éloignement du pays choisi se mesure désormais sur toutes les localités, sans tenir compte du filtre."
   ]}
 ];
 
@@ -760,6 +764,17 @@ async function activerDonnees(p, forcerDepot, depuisSource){
   }
 }
 
+/* Distance à la localité la plus proche, tous filtres ignorés (sert à savoir si l'on est dans le pays choisi) */
+function distancePlusProche(pos){
+  const { lat, lon } = pos, k = Math.cos(lat * Math.PI / 180), C = etat.communes;
+  let best = Infinity, iBest = -1;
+  for(let i = 0; i < C.length; i++){
+    const dy = C[i][1] - lat, dx = (C[i][2] - lon) * k, d2 = dx*dx + dy*dy;
+    if(d2 < best){ best = d2; iBest = i; }
+  }
+  return iBest < 0 ? Infinity : distanceKm(lat, lon, C[iBest][1], C[iBest][2]);
+}
+
 function calculerVoisines(pos){
   const { lat, lon } = pos, k = Math.cos(lat * Math.PI / 180), C = etat.communes, liste = [];
   for(let i = 0; i < C.length; i++){
@@ -789,9 +804,9 @@ function rafraichir(force){
   if(!aBouge && !aTourne) return;
   if(aBouge){
     etat.dernierCalcul = { lat: pos.lat, lon: pos.lon, nb: etat.nb, popMin: etat.popMin };
-    const sel = calculerVoisines(pos);
-    if(sel.length && sel[0].d > 100){ etat.selection = []; etat.loin = sel[0].d; }
-    else { etat.selection = sel; etat.loin = null; }
+    const dPays = distancePlusProche(pos);
+    if(dPays > 100){ etat.selection = []; etat.loin = dPays; }
+    else { etat.selection = calculerVoisines(pos); etat.loin = null; }
     dessinerCarte();
   }
   etat.derniereRot = rot;
