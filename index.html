@@ -171,6 +171,26 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 .champ input{ width:100%; padding:8px 10px; border:1px solid var(--anneau); border-radius:8px; background:var(--papier); font-size:16px; }
 .ligneBoutons{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .etatDonnees{ color:var(--doux); font-size:15px; margin:4px 0 10px; line-height:1.35; }
+
+/* Barres de progression (v1.3) */
+.prog{ position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.prog:disabled{ opacity:1; cursor:default; }
+.btnLarge{ flex:1 1 100%; min-height:50px; font-size:17px; }
+.prog .lab{ display:block; width:100%; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 10px; }
+.prog .rempli{
+  position:absolute; inset:0; background:var(--moi); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  clip-path:inset(0 100% 0 0); transition:clip-path .25s ease; pointer-events:none;
+}
+.prog.indet::after{
+  content:""; position:absolute; left:0; bottom:0; height:6px; width:35%;
+  background:var(--moi); animation:indet 1.2s ease-in-out infinite;
+}
+@keyframes indet{ from{ transform:translateX(-100%); } to{ transform:translateX(290%); } }
+@media (prefers-reduced-motion: reduce){ .prog.indet::after{ animation:none; width:100%; opacity:.4; } }
+.barrePays{ height:50px; border:2px solid var(--moi); border-radius:8px; color:var(--moi); font-weight:600; margin:4px 0 8px; }
+.barrePays[hidden]{ display:none; }
+.etatDonnees.erreur{ color:var(--ville); font-weight:600; }
 </style>
 </head>
 <body>
@@ -184,7 +204,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.2</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.3</button>
 </header>
 
 <main>
@@ -255,6 +275,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
       <input type="radio" name="pays" value="vn">
       <span><b>🇻🇳 Vietnam</b><small>Villes, bourgs et villages d'OpenStreetMap ; population quand elle est renseignée.</small></span>
     </label>
+    <div id="barrePays" class="barrePays prog" hidden><span class="lab"></span><span class="rempli"><span class="lab"></span></span></div>
     <p id="etatDonnees" class="etatDonnees"></p>
   </fieldset>
   <fieldset>
@@ -288,8 +309,8 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
     <label class="champ"><span>Token (facultatif, pour l'écriture)</span><input id="depToken" type="password" autocomplete="off" autocapitalize="off"></label>
     <div class="ligneBoutons">
       <button class="btnPrincipal" id="btnSauverDepot">Enregistrer</button>
-      <button class="btnSecondaire" id="btnRechargerDepot">Recharger depuis le dépôt</button>
-      <button class="btnSecondaire" id="btnDepuisSource">Refaire la liste depuis la source</button>
+      <button class="btnSecondaire btnLarge prog" id="btnRechargerDepot" data-texte="Recharger depuis le dépôt"><span class="lab">Recharger depuis le dépôt</span><span class="rempli"><span class="lab">Recharger depuis le dépôt</span></span></button>
+      <button class="btnSecondaire btnLarge prog" id="btnDepuisSource" data-texte="Refaire la liste depuis la source"><span class="lab">Refaire la liste depuis la source</span><span class="rempli"><span class="lab">Refaire la liste depuis la source</span></span></button>
     </div>
   </details>
   <div class="piedDialog">
@@ -311,7 +332,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.2";
+const VERSION = "1.3";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -329,12 +350,19 @@ const HISTORIQUE = [
     "Listes préparées lues dans le dépôt GitHub « entourages » ; repli sur la source si le fichier manque, puis enregistrement dans le dépôt si un token est saisi.",
     "Cache déplacé du localStorage vers IndexedDB (plus de place, localStorage libéré).",
     "Message clair quand on est loin du pays choisi ; recherche insensible aux accents vietnamiens."
+  ]},
+  { v: "1.3", date: "24/09/2026", notes: [
+    "Barre de progression dans les boutons de chargement, élargis : pourcentage, Mo reçus sur Mo attendus, décompte des localités traitées.",
+    "Même barre sous le choix du pays pendant le chargement d'une liste.",
+    "Taille des téléchargements mémorisée pour afficher un pourcentage réel ; barre animée tant que la taille est inconnue.",
+    "Réglages : état de la liste suivi en direct (en cours, étape, nombre de localités, erreur en rouge avec la marche à suivre)."
   ]}
 ];
 
 const CLE_REGLAGES = "alentours_reglages";
 const CLE_POSITION = "alentours_position";
 const CLE_DEPOT = "alentours_depot";
+const CLE_TAILLES = "alentours_tailles";
 const ANCIEN_CACHE = "alentours_communes_v1";
 const URL_COMMUNES = "https://geo.api.gouv.fr/communes?fields=nom,centre,population,codeDepartement&format=json&geometry=centre";
 const SERVEURS_OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
@@ -359,6 +387,7 @@ const etat = {
   nb: 10, popMin: 0,
   orientation: "nord", rendu: "instantane",
   capMarche: null, pointCap: null,
+  enCours: null, erreurs: { fr: null, vn: null },
   selection: [], loin: null, dernierCalcul: null, derniereRot: null,
   affiche: null, anim: null,
   carte: null, couche: null, communeFiche: null,
@@ -448,22 +477,60 @@ function suitLaMarche(){ return etat.orientation === "marche" && etat.mode === "
 function rotationRadar(){ return suitLaMarche() ? etat.capMarche : 0; }
 function dateCourte(iso){ try{ return new Date(iso).toLocaleDateString("fr-FR"); }catch(e){ return "?"; } }
 
+/* ---------- Progression (barre dans le bouton + message du radar) ---------- */
+let barreActive = null;       // élément .prog qui affiche la progression en cours
+let phase = [0, 1];           // portion de la barre attribuée à l'étape en cours
+function etape(a, b){ phase = [a, b]; }
+function reglerBarre(el, frac, texte, indet){
+  el.querySelectorAll(".lab").forEach(l => l.textContent = texte);
+  el.classList.toggle("indet", !!indet);
+  el.querySelector(".rempli").style.clipPath = `inset(0 ${(100 - Math.max(0, Math.min(1, frac)) * 100).toFixed(1)}% 0 0)`;
+}
+/* ratio : avancement dans l'étape (0 à 1), ou null s'il est inconnu */
+function progres(ratio, court, long){
+  afficherEtat(long || court);
+  if(etat.enCours && etat.enCours === etat.pays && (long || court)){
+    const e = $("etatDonnees");
+    e.classList.remove("erreur");
+    e.textContent = PAYS[etat.pays].drapeau + " " + (long || court);
+  }
+  if(!barreActive) return;
+  if(ratio === null){
+    reglerBarre(barreActive, phase[0], court, true);
+  } else {
+    const f = phase[0] + (phase[1] - phase[0]) * Math.max(0, Math.min(1, ratio));
+    reglerBarre(barreActive, f, `${Math.round(f * 100)} % : ${court}`, false);
+  }
+}
+function mo(o){ return (o / 1048576).toFixed(1).replace(".", ","); }
+const pause = () => new Promise(r => setTimeout(r, 0));
+
 /* ---------- Téléchargement avec décompte ---------- */
-async function telechargerTexte(url, init, libelle){
+async function telechargerTexte(url, init, libelle, cleTaille){
+  const tailles = lireJSON(CLE_TAILLES, {}), connue = tailles[cleTaille] || 0;
+  progres(null, "Connexion…", `Connexion pour télécharger ${libelle}…`);
   const r = await fetch(url, init);
   if(!r.ok){ const e = new Error("le serveur a répondu " + r.status); e.statut = r.status; throw e; }
-  if(!(r.body && r.body.getReader)) return await r.text();
-  const lecteur = r.body.getReader(), morceaux = [];
-  let recu = 0;
-  for(;;){
-    const { done, value } = await lecteur.read();
-    if(done) break;
-    morceaux.push(value); recu += value.length;
-    afficherEtat(`Téléchargement ${libelle} : ${(recu / 1048576).toFixed(1).replace(".", ",")} Mo reçus…`);
+  let texte, recu = 0;
+  if(r.body && r.body.getReader){
+    const lecteur = r.body.getReader(), morceaux = [];
+    for(;;){
+      const { done, value } = await lecteur.read();
+      if(done) break;
+      morceaux.push(value); recu += value.length;
+      if(connue) progres(Math.min(recu / connue, 0.99), `${mo(recu)} Mo sur ${mo(connue)}`, `Téléchargement ${libelle} : ${mo(recu)} Mo sur ${mo(connue)}…`);
+      else progres(null, `${mo(recu)} Mo reçus`, `Téléchargement ${libelle} : ${mo(recu)} Mo reçus…`);
+    }
+    const tout = new Uint8Array(recu); let o = 0;
+    for(const m of morceaux){ tout.set(m, o); o += m.length; }
+    texte = new TextDecoder().decode(tout);
+  } else {
+    texte = await r.text(); recu = texte.length;
   }
-  const tout = new Uint8Array(recu); let o = 0;
-  for(const m of morceaux){ tout.set(m, o); o += m.length; }
-  return new TextDecoder().decode(tout);
+  tailles[cleTaille] = recu;
+  ecrireJSON(CLE_TAILLES, tailles);
+  progres(1, `${mo(recu)} Mo reçus`, `Téléchargement ${libelle} terminé (${mo(recu)} Mo).`);
+  return texte;
 }
 
 /* ---------- Dépôt GitHub ---------- */
@@ -471,17 +538,17 @@ function urlApiContenu(chemin){
   const d = etat.depot;
   return `https://api.github.com/repos/${encodeURIComponent(d.owner)}/${encodeURIComponent(d.repo)}/contents/${chemin}`;
 }
-async function lireDepot(chemin){
+async function lireDepot(chemin, cleTaille){
   const d = etat.depot;
   let texte;
   if(d.token){
     texte = await telechargerTexte(urlApiContenu(chemin) + "?ref=" + encodeURIComponent(d.branche), {
       headers: { Authorization: "Bearer " + d.token, Accept: "application/vnd.github.raw+json" }, cache: "no-store"
-    }, "depuis le dépôt");
+    }, "depuis le dépôt", cleTaille);
   } else {
     texte = await telechargerTexte(
       `https://raw.githubusercontent.com/${encodeURIComponent(d.owner)}/${encodeURIComponent(d.repo)}/${encodeURIComponent(d.branche)}/${chemin}`,
-      { cache: "no-cache" }, "depuis le dépôt");
+      { cache: "no-cache" }, "depuis le dépôt", cleTaille);
   }
   return JSON.parse(texte);
 }
@@ -495,53 +562,73 @@ async function ecrireDepot(chemin, objet, message){
   const d = etat.depot;
   if(!d.token) throw new Error("aucun token saisi");
   const entetes = { Authorization: "Bearer " + d.token, Accept: "application/vnd.github+json" };
+  progres(0, "Préparation de l'envoi", "Préparation de l'envoi vers le dépôt GitHub…");
   let sha;
   const g = await fetch(urlApiContenu(chemin) + "?ref=" + encodeURIComponent(d.branche), { headers: entetes, cache: "no-store" });
   if(g.ok) sha = (await g.json()).sha;
   else if(g.status !== 404) throw new Error("lecture du dépôt impossible (" + g.status + ")");
-  afficherEtat("Envoi de la liste vers le dépôt GitHub…");
-  const corps = { message, content: base64Utf8(JSON.stringify(objet)), branch: d.branche };
+  const contenu = base64Utf8(JSON.stringify(objet));
+  progres(null, `Envoi de ${mo(contenu.length * 3 / 4)} Mo`, `Envoi de la liste (${mo(contenu.length * 3 / 4)} Mo) vers le dépôt GitHub…`);
+  const corps = { message, content: contenu, branch: d.branche };
   if(sha) corps.sha = sha;
   const p = await fetch(urlApiContenu(chemin), { method: "PUT", headers: { ...entetes, "Content-Type": "application/json" }, body: JSON.stringify(corps) });
   if(!p.ok) throw new Error("écriture refusée par GitHub (" + p.status + ")");
+  progres(1, "Envoyée au dépôt", "Liste enregistrée dans le dépôt GitHub.");
 }
 
 /* ---------- Préparation depuis la source (France : geo.api.gouv.fr ; Vietnam : OpenStreetMap) ---------- */
 async function preparerDepuisSource(p){
   const d = [];
   if(p === "fr"){
-    const brut = JSON.parse(await telechargerTexte(URL_COMMUNES, {}, "des communes (geo.api.gouv.fr)"));
-    const total = brut.length;
+    etape(0, 0.6);
+    const texte = await telechargerTexte(URL_COMMUNES, {}, "des communes (geo.api.gouv.fr)", "source_fr");
+    etape(0.6, 0.85);
+    progres(0, "Lecture des données", "Lecture des données reçues…");
+    await pause();
+    const brut = JSON.parse(texte), total = brut.length;
     for(let i = 0; i < total; i++){
       const c = brut[i];
-      if(!c.centre || !c.centre.coordinates) continue;
-      const [lon, lat] = c.centre.coordinates, pop = c.population || 0;
-      d.push([c.nom, +lat.toFixed(4), +lon.toFixed(4), pop, c.codeDepartement ? "Département " + c.codeDepartement : "", pop]);
+      if(c.centre && c.centre.coordinates){
+        const [lon, lat] = c.centre.coordinates, pop = c.population || 0;
+        d.push([c.nom, +lat.toFixed(4), +lon.toFixed(4), pop, c.codeDepartement ? "Département " + c.codeDepartement : "", pop]);
+      }
+      if(i % 2000 === 1999){
+        progres((i + 1) / total, `${nf(i + 1)} / ${nf(total)} communes`, `Préparation : ${nf(i + 1)} communes traitées sur ${nf(total)}, reste ${nf(total - i - 1)}.`);
+        await pause();
+      }
     }
-    afficherEtat(`${nf(d.length)} communes retenues sur ${nf(total)} reçues.`);
+    progres(1, `${nf(d.length)} communes`, `${nf(d.length)} communes retenues sur ${nf(total)} reçues.`);
     return d;
   }
+  etape(0, 0.6);
   let texte = null, derniere = null;
   for(const serveur of SERVEURS_OVERPASS){
     try{
       texte = await telechargerTexte(serveur, {
         method: "POST", body: "data=" + encodeURIComponent(REQUETE_VN),
         headers: { "Content-Type": "application/x-www-form-urlencoded" }
-      }, "des localités du Vietnam (OpenStreetMap)");
+      }, "des localités du Vietnam (OpenStreetMap)", "source_vn");
       break;
-    }catch(e){ derniere = e; afficherEtat("Serveur OpenStreetMap indisponible, essai d'un autre…"); }
+    }catch(e){ derniere = e; progres(null, "Essai d'un autre serveur", "Serveur OpenStreetMap indisponible, essai d'un autre…"); }
   }
   if(texte === null) throw derniere || new Error("aucun serveur OpenStreetMap n'a répondu");
+  etape(0.6, 0.85);
   const lignes = texte.split("\n"), total = lignes.length;
   for(let i = 0; i < total; i++){
     const f = lignes[i].split("\t");
-    if(f.length < 6) continue;
-    const lat = parseFloat(f[0]), lon = parseFloat(f[1]), nom = (f[2] || f[3] || "").trim(), type = f[5].trim();
-    if(!nom || isNaN(lat) || isNaN(lon) || !TAILLE_TYPE[type]) continue;
-    const pop = parseInt((f[4] || "").replace(/\D/g, ""), 10) || 0;
-    d.push([nom, +lat.toFixed(4), +lon.toFixed(4), pop, LIBELLE_TYPE[type] + ", d'après OpenStreetMap", pop || TAILLE_TYPE[type]]);
+    if(f.length >= 6){
+      const lat = parseFloat(f[0]), lon = parseFloat(f[1]), nom = (f[2] || f[3] || "").trim(), type = f[5].trim();
+      if(nom && !isNaN(lat) && !isNaN(lon) && TAILLE_TYPE[type]){
+        const pop = parseInt((f[4] || "").replace(/\D/g, ""), 10) || 0;
+        d.push([nom, +lat.toFixed(4), +lon.toFixed(4), pop, LIBELLE_TYPE[type] + ", d'après OpenStreetMap", pop || TAILLE_TYPE[type]]);
+      }
+    }
+    if(i % 2000 === 1999){
+      progres((i + 1) / total, `${nf(i + 1)} / ${nf(total)} lieux`, `Préparation : ${nf(i + 1)} lignes traitées sur ${nf(total)}, reste ${nf(total - i - 1)}.`);
+      await pause();
+    }
   }
-  afficherEtat(`${nf(d.length)} localités retenues sur ${nf(total)} lignes reçues.`);
+  progres(1, `${nf(d.length)} localités`, `${nf(d.length)} localités retenues sur ${nf(total)} lignes reçues.`);
   if(!d.length) throw new Error("la réponse d'OpenStreetMap ne contient aucune localité");
   return d;
 }
@@ -552,6 +639,7 @@ async function construireDepuisSource(p){
   const date = new Date().toISOString();
   const c = { d, date, origine: "source" };
   await idbEcrire("lieux_" + p, c);
+  etape(0.85, 1);
   if(etat.depot.token){
     try{
       await ecrireDepot(PAYS[p].fichier,
@@ -561,7 +649,10 @@ async function construireDepuisSource(p){
       await idbEcrire("lieux_" + p, c);
     }catch(e){
       c.origine = "source (envoi au dépôt impossible : " + e.message + ")";
+      progres(1, "Envoi au dépôt impossible", "Liste prête sur l'appareil, mais envoi au dépôt impossible : " + e.message);
     }
+  } else {
+    progres(1, "Liste prête (sans envoi)", "Liste prête sur l'appareil ; sans token, elle n'est pas envoyée au dépôt.");
   }
   return c;
 }
@@ -571,7 +662,7 @@ async function chargerLieux(p, forcerDepot){
   if(!forcerDepot){
     if(etat.donnees[p]) return etat.donnees[p];
     const c = await idbLire("lieux_" + p);
-    if(c && Array.isArray(c.d) && c.d.length) return (etat.donnees[p] = c);
+    if(c && Array.isArray(c.d) && c.d.length){ progres(1, "Liste en mémoire", ""); return (etat.donnees[p] = c); }
     if(p === "fr"){ // reprise de l'ancien cache localStorage (v1.0-1.1), puis libération de la place
       const ancien = lireJSON(ANCIEN_CACHE, null);
       try{ localStorage.removeItem(ANCIEN_CACHE); }catch(e){}
@@ -579,21 +670,25 @@ async function chargerLieux(p, forcerDepot){
         const m = { d: ancien.d.map(x => [x[0], x[1], x[2], x[3], x[4] ? "Département " + x[4] : "", x[3]]),
                     date: new Date(ancien.date || Date.now()).toISOString(), origine: "ancien cache" };
         await idbEcrire("lieux_fr", m);
+        progres(1, "Liste en mémoire", "");
         return (etat.donnees.fr = m);
       }
     }
   }
   try{
-    afficherEtat(`Lecture de la liste ${PAYS[p].nom} dans le dépôt…`);
-    const f = await lireDepot(PAYS[p].fichier);
+    etape(0, 0.9);
+    progres(null, "Lecture du dépôt", `Lecture de la liste ${PAYS[p].nom} dans le dépôt…`);
+    const f = await lireDepot(PAYS[p].fichier, "depot_" + p);
     if(f && Array.isArray(f.d) && f.d.length){
+      etape(0.9, 1);
+      progres(0, "Enregistrement local", "Enregistrement de la liste sur l'appareil…");
       const c = { d: f.d, date: f.date || new Date().toISOString(), origine: "dépôt GitHub" };
       await idbEcrire("lieux_" + p, c);
-      afficherEtat(`${nf(c.d.length)} ${PAYS[p].lieux} lues dans le dépôt.`);
+      progres(1, `${nf(c.d.length)} ${PAYS[p].lieux}`, `${nf(c.d.length)} ${PAYS[p].lieux} lues dans le dépôt.`);
       return (etat.donnees[p] = c);
     }
   }catch(e){
-    afficherEtat(e.statut === 404
+    progres(null, "Préparation depuis la source", e.statut === 404
       ? `Liste ${PAYS[p].nom} absente du dépôt : préparation depuis la source…`
       : `Dépôt illisible (${e.message}) : préparation depuis la source…`);
   }
@@ -601,26 +696,59 @@ async function chargerLieux(p, forcerDepot){
 }
 
 function majEtatDonnees(){
-  const c = etat.donnees[etat.pays];
-  $("etatDonnees").textContent = c
-    ? `${PAYS[etat.pays].drapeau} ${nf(c.d.length)} ${PAYS[etat.pays].lieux}, liste du ${dateCourte(c.date)} (${c.origine}).`
-    : `${PAYS[etat.pays].drapeau} Liste pas encore chargée.`;
+  const p = etat.pays, c = etat.donnees[p], e = $("etatDonnees"), dr = PAYS[p].drapeau + " ";
+  e.classList.remove("erreur");
+  if(etat.enCours === p){
+    e.textContent = dr + "Chargement de la liste en cours…";
+  } else if(c){
+    e.textContent = `${dr}${nf(c.d.length)} ${PAYS[p].lieux}, liste du ${dateCourte(c.date)} (${c.origine}).`;
+  } else if(etat.erreurs[p]){
+    e.classList.add("erreur");
+    e.textContent = `${dr}Échec du chargement : ${etat.erreurs[p]}. Touchez « Recharger depuis le dépôt » pour réessayer, ou « Refaire la liste depuis la source ».`;
+    $("detailsDepot").open = true;
+  } else {
+    e.textContent = `${dr}Liste pas encore chargée : touchez « Recharger depuis le dépôt » ci-dessous.`;
+    $("detailsDepot").open = true;
+  }
 }
 
+/* Renvoie true si la liste est prête */
 async function activerDonnees(p, forcerDepot, depuisSource){
+  etat.enCours = p; etat.erreurs[p] = null;
+  const barre = $("barrePays");
+  let barrePropre = false;
+  if(!barreActive){ // chargement non lancé par un bouton : la barre sous le choix du pays sert de témoin
+    barreActive = barre; barrePropre = true;
+    barre.hidden = false; etape(0, 1);
+    reglerBarre(barre, 0, "Chargement de la liste…", true);
+  }
+  majEtatDonnees();
+  const fin = ok => {
+    if(etat.enCours === p) etat.enCours = null;
+    if(barrePropre){
+      if(barreActive === barre) barreActive = null;
+      reglerBarre(barre, ok ? 1 : 0, ok ? "✓ Liste prête" : "Échec du chargement", false);
+      setTimeout(() => { if(barreActive !== barre) barre.hidden = true; }, 1800);
+    }
+    majEtatDonnees();
+    return ok;
+  };
   try{
     let c;
     if(depuisSource){ c = etat.donnees[p] = await construireDepuisSource(p); }
     else c = await chargerLieux(p, forcerDepot);
-    if(etat.pays !== p) return;
+    if(etat.pays !== p) return fin(true);
     etat.communes = c.d;
     etat.noms = c.d.map(x => norm(x[0]));
     etat.dernierCalcul = null;
     majEtatDonnees();
     if(!positionCourante()) afficherEtat("Recherche de votre position…");
     rafraichir(true);
+    return fin(true);
   }catch(e){
+    etat.erreurs[p] = e.message;
     afficherEtat(`Impossible de charger les ${PAYS[p].lieux} (${e.message}). Vérifiez la connexion puis réessayez depuis les réglages.`, true);
+    return fin(false);
   }
 }
 
@@ -1021,6 +1149,21 @@ function remplirHistorique(){
   ).join("");
 }
 
+/* ---------- Bouton avec barre de progression intégrée ---------- */
+async function boutonProgression(bouton, tache){
+  if(bouton.disabled) return;
+  if(barreActive){ afficherEtat("Un chargement est déjà en cours : attendez qu'il se termine (barre sous le choix du pays)."); return; }
+  const texte = bouton.dataset.texte;
+  bouton.disabled = true;
+  barreActive = bouton; etape(0, 1);
+  reglerBarre(bouton, 0, "Démarrage…", true);
+  let ok = true;
+  try{ ok = (await tache()) !== false; }catch(e){ ok = false; }
+  barreActive = null;
+  reglerBarre(bouton, ok ? 1 : 0, ok ? "✓ Terminé" : "Échec, voir le message", false);
+  setTimeout(() => { reglerBarre(bouton, 0, texte, false); bouton.disabled = false; }, 2500);
+}
+
 /* ---------- Retour visuel sur un bouton ---------- */
 async function boutonTache(bouton, tache){
   const texte = bouton.textContent;
@@ -1085,16 +1228,18 @@ function demarrer(){
     etat.depot = d;
     if(!ecrireJSON(CLE_DEPOT, d)) throw new Error("enregistrement impossible");
   }));
-  $("btnRechargerDepot").addEventListener("click", e => boutonTache(e.currentTarget, async () => {
+  $("btnRechargerDepot").addEventListener("click", e => boutonProgression(e.currentTarget, async () => {
     const p = etat.pays;
     etat.donnees[p] = null;
-    await activerDonnees(p, true, false);
+    const ok = await activerDonnees(p, true, false);
     majEtatDonnees();
+    return ok;
   }));
-  $("btnDepuisSource").addEventListener("click", e => boutonTache(e.currentTarget, async () => {
+  $("btnDepuisSource").addEventListener("click", e => boutonProgression(e.currentTarget, async () => {
     const p = etat.pays;
-    await activerDonnees(p, false, true);
+    const ok = await activerDonnees(p, false, true);
     majEtatDonnees();
+    return ok;
   }));
 
   document.querySelectorAll(".onglets button").forEach(b => b.addEventListener("click", () => montrerVue(b.dataset.vue)));
