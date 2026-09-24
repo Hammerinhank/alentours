@@ -162,6 +162,15 @@ legend{ font-size:19px; font-weight:700; padding:0; margin-bottom:6px; }
 .choix input{ margin-top:4px; width:18px; height:18px; accent-color:var(--moi); }
 .choix b{ display:block; font-size:17px; }
 .choix small{ display:block; color:var(--doux); font-size:15px; line-height:1.3; margin-top:2px; }
+
+.noteVn{ width:100%; color:var(--doux); font-size:13px; }
+details.depot{ border:1px solid var(--anneau); border-radius:10px; padding:8px 12px; margin-bottom:12px; }
+details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
+.champ{ display:block; margin:8px 0; }
+.champ span{ display:block; color:var(--doux); font-size:15px; margin-bottom:2px; }
+.champ input{ width:100%; padding:8px 10px; border:1px solid var(--anneau); border-radius:8px; background:var(--papier); font-size:16px; }
+.ligneBoutons{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.etatDonnees{ color:var(--doux); font-size:15px; margin:4px 0 10px; line-height:1.35; }
 </style>
 </head>
 <body>
@@ -175,17 +184,17 @@ legend{ font-size:19px; font-weight:700; padding:0; margin-bottom:6px; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.1</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.2</button>
 </header>
 
 <main>
   <section id="vueRadar" class="vue active">
     <div class="zoneRadar">
       <div id="etat" class="etat" hidden></div>
-      <svg id="radar" role="img" aria-label="Communes proches de votre position"></svg>
+      <svg id="radar" role="img" aria-label="Localités proches de votre position"></svg>
     </div>
     <div class="reglages">
-      <label>Communes
+      <label>Localités
         <select id="selNombre">
           <option value="6">6</option><option value="8">8</option><option value="10">10</option>
           <option value="12">12</option><option value="16">16</option>
@@ -203,12 +212,13 @@ legend{ font-size:19px; font-weight:700; padding:0; margin-bottom:6px; }
         <span><i class="pastille" style="background:var(--bourg)"></i>2 000 à 20 000</span>
         <span><i class="pastille" style="background:var(--ville)"></i>plus de 20 000</span>
       </div>
+      <div id="noteVn" class="noteVn" hidden>Au Vietnam, quand la population n'est pas connue, la taille est estimée d'après le type de lieu (ville, bourg, village).</div>
     </div>
   </section>
 
   <section id="vueCarte" class="vue">
     <div class="recherche">
-      <input id="rech" type="search" placeholder="Aller à une commune…" autocomplete="off">
+      <input id="rech" type="search" placeholder="Aller à une localité…" autocomplete="off">
       <ul id="resultats"></ul>
     </div>
     <div id="carte"></div>
@@ -236,6 +246,18 @@ legend{ font-size:19px; font-weight:700; padding:0; margin-bottom:6px; }
 <dialog id="dlgReglages">
   <h2>Réglages</h2>
   <fieldset>
+    <legend>Pays</legend>
+    <label class="choix">
+      <input type="radio" name="pays" value="fr">
+      <span><b>🇫🇷 France</b><small>Communes officielles (INSEE) avec leur population.</small></span>
+    </label>
+    <label class="choix">
+      <input type="radio" name="pays" value="vn">
+      <span><b>🇻🇳 Vietnam</b><small>Villes, bourgs et villages d'OpenStreetMap ; population quand elle est renseignée.</small></span>
+    </label>
+    <p id="etatDonnees" class="etatDonnees"></p>
+  </fieldset>
+  <fieldset>
     <legend>Orientation du radar</legend>
     <label class="choix">
       <input type="radio" name="orientation" value="nord">
@@ -254,9 +276,22 @@ legend{ font-size:19px; font-weight:700; padding:0; margin-bottom:6px; }
     </label>
     <label class="choix">
       <input type="radio" name="rendu" value="doux">
-      <span><b>Glissement en douceur</b><small>Les communes glissent vers leur nouvelle place ; celles qui arrivent ou partent apparaissent et s'effacent progressivement.</small></span>
+      <span><b>Glissement en douceur</b><small>Les localités glissent vers leur nouvelle place ; celles qui arrivent ou partent apparaissent et s'effacent progressivement.</small></span>
     </label>
   </fieldset>
+  <details class="depot" id="detailsDepot">
+    <summary>Dépôt GitHub des données</summary>
+    <p class="etatDonnees">Les listes de localités, déjà préparées, sont lues dans ce dépôt (sans token si le dépôt est public). Le token ne sert qu'à y enregistrer une liste mise à jour.</p>
+    <label class="champ"><span>Propriétaire</span><input id="depOwner" autocomplete="off" autocapitalize="off"></label>
+    <label class="champ"><span>Dépôt</span><input id="depRepo" autocomplete="off" autocapitalize="off"></label>
+    <label class="champ"><span>Branche</span><input id="depBranche" autocomplete="off" autocapitalize="off"></label>
+    <label class="champ"><span>Token (facultatif, pour l'écriture)</span><input id="depToken" type="password" autocomplete="off" autocapitalize="off"></label>
+    <div class="ligneBoutons">
+      <button class="btnPrincipal" id="btnSauverDepot">Enregistrer</button>
+      <button class="btnSecondaire" id="btnRechargerDepot">Recharger depuis le dépôt</button>
+      <button class="btnSecondaire" id="btnDepuisSource">Refaire la liste depuis la source</button>
+    </div>
+  </details>
   <div class="piedDialog">
     <span></span>
     <button class="btnPrincipal" id="btnFermerReglages">Fermer</button>
@@ -267,7 +302,7 @@ legend{ font-size:19px; font-weight:700; padding:0; margin-bottom:6px; }
   <h2>Historique des versions</h2>
   <div id="histo" class="histo"></div>
   <div class="piedDialog">
-    <button class="btnSecondaire" id="btnRecharger">Recharger la liste des communes</button>
+    <span></span>
     <button class="btnPrincipal" id="btnFermerVersion">Fermer</button>
   </div>
 </dialog>
@@ -276,7 +311,7 @@ legend{ font-size:19px; font-weight:700; padding:0; margin-bottom:6px; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.1";
+const VERSION = "1.2";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -288,35 +323,86 @@ const HISTORIQUE = [
     "Option « Sens de la marche » : radar orienté selon la direction GPS, N rouge pour le nord, flèche au centre.",
     "Option « Glissement en douceur » : transitions animées entre deux positions.",
     "Fiche commune : position relative (devant, à droite…) quand le radar suit la marche."
+  ]},
+  { v: "1.2", date: "24/09/2026", notes: [
+    "Choix du pays dans les réglages : France ou Vietnam (villes, bourgs, villages d'OpenStreetMap).",
+    "Listes préparées lues dans le dépôt GitHub « entourages » ; repli sur la source si le fichier manque, puis enregistrement dans le dépôt si un token est saisi.",
+    "Cache déplacé du localStorage vers IndexedDB (plus de place, localStorage libéré).",
+    "Message clair quand on est loin du pays choisi ; recherche insensible aux accents vietnamiens."
   ]}
 ];
 
-const CLE_CACHE = "alentours_communes_v1";
 const CLE_REGLAGES = "alentours_reglages";
 const CLE_POSITION = "alentours_position";
+const CLE_DEPOT = "alentours_depot";
+const ANCIEN_CACHE = "alentours_communes_v1";
 const URL_COMMUNES = "https://geo.api.gouv.fr/communes?fields=nom,centre,population,codeDepartement&format=json&geometry=centre";
+const SERVEURS_OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+const REQUETE_VN = '[out:csv(::lat,::lon,name,"name:vi",population,place;false)][timeout:180];' +
+                   'area["ISO3166-1"="VN"][admin_level=2]->.a;node["place"~"^(city|town|village)$"](area.a);out;';
+const TAILLE_TYPE = { city: 150000, town: 15000, village: 1500 };
+const LIBELLE_TYPE = { city: "Ville", town: "Bourg", village: "Village" };
+const PAYS = {
+  fr: { nom: "France", dans: "en France", drapeau: "🇫🇷", centre: [46.6, 2.5], zoom: 6, fichier: "lieux-fr.json", lieux: "communes" },
+  vn: { nom: "Vietnam", dans: "au Vietnam", drapeau: "🇻🇳", centre: [16.0, 106.5], zoom: 5, fichier: "lieux-vn.json", lieux: "localités" }
+};
+const DEPOT_DEFAUT = { owner: "Hammerinhank", repo: "entourages", branche: "main", token: "" };
 const NS = "http://www.w3.org/2000/svg";
 const DUREE_ANIM = 800;
 const $ = id => document.getElementById(id);
 
 const etat = {
-  communes: null,      // [nom, lat, lon, population, département]
-  noms: null,          // noms normalisés pour la recherche
-  gps: null, sim: null, mode: "gps",
+  pays: "fr",
+  donnees: { fr: null, vn: null }, // { d:[[nom, lat, lon, pop, info, taille]], date, origine }
+  communes: null, noms: null,
+  gps: null, mode: "gps", sims: { fr: null, vn: null },
   nb: 10, popMin: 0,
-  orientation: "nord", // "nord" | "marche"
-  rendu: "instantane", // "instantane" | "doux"
+  orientation: "nord", rendu: "instantane",
   capMarche: null, pointCap: null,
-  selection: [], dernierCalcul: null, derniereRot: null,
+  selection: [], loin: null, dernierCalcul: null, derniereRot: null,
   affiche: null, anim: null,
-  carte: null, couche: null, communeFiche: null
+  carte: null, couche: null, communeFiche: null,
+  depot: { ...DEPOT_DEFAUT }
 };
 
-/* ---------- Stockage ---------- */
+/* ---------- Stockage léger (localStorage) ---------- */
 function lireJSON(cle, def){ try{ const v = localStorage.getItem(cle); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
 function ecrireJSON(cle, v){ try{ localStorage.setItem(cle, JSON.stringify(v)); return true; }catch(e){ return false; } }
 function sauverReglages(){
-  ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin, orientation: etat.orientation, rendu: etat.rendu });
+  ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin, orientation: etat.orientation, rendu: etat.rendu, pays: etat.pays });
+}
+function sauverPosition(){ ecrireJSON(CLE_POSITION, { mode: etat.mode, sims: etat.sims }); }
+
+/* ---------- Stockage volumineux (IndexedDB) ---------- */
+let baseIdb = null;
+function ouvrirIdb(){
+  if(baseIdb) return Promise.resolve(baseIdb);
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("alentours", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("donnees");
+    r.onsuccess = () => { baseIdb = r.result; res(baseIdb); };
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbLire(cle){
+  try{
+    const db = await ouvrirIdb();
+    return await new Promise(res => {
+      const q = db.transaction("donnees").objectStore("donnees").get(cle);
+      q.onsuccess = () => res(q.result || null);
+      q.onerror = () => res(null);
+    });
+  }catch(e){ return null; }
+}
+async function idbEcrire(cle, v){
+  try{
+    const db = await ouvrirIdb();
+    await new Promise(res => {
+      const tx = db.transaction("donnees", "readwrite");
+      tx.objectStore("donnees").put(v, cle);
+      tx.oncomplete = () => res(); tx.onerror = () => res();
+    });
+  }catch(e){}
 }
 
 /* ---------- Utilitaires ---------- */
@@ -326,7 +412,7 @@ function afficherEtat(txt, erreur){
   e.classList.toggle("erreur", !!erreur);
   e.hidden = !txt;
 }
-function norm(s){ return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[-'’]/g, " "); }
+function norm(s){ return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").toLowerCase().replace(/[-'’]/g, " "); }
 function nf(n){ return n.toLocaleString("fr-FR"); }
 function formatDistance(d){
   if(d < 1) return Math.round(d * 1000 / 10) * 10 + " m";
@@ -352,64 +438,204 @@ function cap(lat1, lon1, lat2, lon2){
   const x = Math.cos(p1)*Math.sin(p2) - Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
   return (Math.atan2(y, x) / r + 360) % 360;
 }
-function ecartDeg(b, a){ return ((b - a + 540) % 360) - 180; }                       // de a vers b, en degrés
+function ecartDeg(b, a){ return ((b - a + 540) % 360) - 180; }
 function ecartRad(b, a){ const T = 2 * Math.PI; return ((b - a + Math.PI) % T + T) % T - Math.PI; }
-function rayonSphere(pop){ return 5 + 3.2 * Math.log10(Math.max(pop, 10)); }
-function classeTaille(pop){ return pop >= 20000 ? "ville" : pop >= 2000 ? "bourg" : "village"; }
+function rayonSphere(taille){ return 5 + 3.2 * Math.log10(Math.max(taille, 10)); }
+function classeTaille(taille){ return taille >= 20000 ? "ville" : taille >= 2000 ? "bourg" : "village"; }
 function couleur(nom){ return getComputedStyle(document.documentElement).getPropertyValue("--" + nom).trim(); }
-function positionCourante(){ return etat.mode === "sim" ? etat.sim : etat.gps; }
+function positionCourante(){ return etat.mode === "sim" ? etat.sims[etat.pays] : etat.gps; }
 function suitLaMarche(){ return etat.orientation === "marche" && etat.mode === "gps" && etat.capMarche !== null; }
 function rotationRadar(){ return suitLaMarche() ? etat.capMarche : 0; }
+function dateCourte(iso){ try{ return new Date(iso).toLocaleDateString("fr-FR"); }catch(e){ return "?"; } }
 
-/* ---------- Données des communes ---------- */
-async function chargerCommunes(forcer){
-  if(!forcer){
-    const c = lireJSON(CLE_CACHE, null);
-    if(c && Array.isArray(c.d) && c.d.length > 1000) return c.d;
+/* ---------- Téléchargement avec décompte ---------- */
+async function telechargerTexte(url, init, libelle){
+  const r = await fetch(url, init);
+  if(!r.ok){ const e = new Error("le serveur a répondu " + r.status); e.statut = r.status; throw e; }
+  if(!(r.body && r.body.getReader)) return await r.text();
+  const lecteur = r.body.getReader(), morceaux = [];
+  let recu = 0;
+  for(;;){
+    const { done, value } = await lecteur.read();
+    if(done) break;
+    morceaux.push(value); recu += value.length;
+    afficherEtat(`Téléchargement ${libelle} : ${(recu / 1048576).toFixed(1).replace(".", ",")} Mo reçus…`);
   }
-  afficherEtat("Téléchargement de la liste des communes…");
-  const r = await fetch(URL_COMMUNES);
-  if(!r.ok) throw new Error("le service geo.api.gouv.fr a répondu " + r.status);
+  const tout = new Uint8Array(recu); let o = 0;
+  for(const m of morceaux){ tout.set(m, o); o += m.length; }
+  return new TextDecoder().decode(tout);
+}
+
+/* ---------- Dépôt GitHub ---------- */
+function urlApiContenu(chemin){
+  const d = etat.depot;
+  return `https://api.github.com/repos/${encodeURIComponent(d.owner)}/${encodeURIComponent(d.repo)}/contents/${chemin}`;
+}
+async function lireDepot(chemin){
+  const d = etat.depot;
   let texte;
-  if(r.body && r.body.getReader){
-    const lecteur = r.body.getReader(), morceaux = [];
-    let recu = 0;
-    for(;;){
-      const { done, value } = await lecteur.read();
-      if(done) break;
-      morceaux.push(value); recu += value.length;
-      afficherEtat(`Téléchargement des communes : ${(recu / 1048576).toFixed(1).replace(".", ",")} Mo reçus…`);
-    }
-    const tout = new Uint8Array(recu); let o = 0;
-    for(const m of morceaux){ tout.set(m, o); o += m.length; }
-    texte = new TextDecoder().decode(tout);
+  if(d.token){
+    texte = await telechargerTexte(urlApiContenu(chemin) + "?ref=" + encodeURIComponent(d.branche), {
+      headers: { Authorization: "Bearer " + d.token, Accept: "application/vnd.github.raw+json" }, cache: "no-store"
+    }, "depuis le dépôt");
   } else {
-    texte = await r.text();
+    texte = await telechargerTexte(
+      `https://raw.githubusercontent.com/${encodeURIComponent(d.owner)}/${encodeURIComponent(d.repo)}/${encodeURIComponent(d.branche)}/${chemin}`,
+      { cache: "no-cache" }, "depuis le dépôt");
   }
-  const brut = JSON.parse(texte), total = brut.length, d = [];
+  return JSON.parse(texte);
+}
+function base64Utf8(texte){
+  const octets = new TextEncoder().encode(texte);
+  let bin = "";
+  for(let i = 0; i < octets.length; i += 0x8000) bin += String.fromCharCode.apply(null, octets.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+async function ecrireDepot(chemin, objet, message){
+  const d = etat.depot;
+  if(!d.token) throw new Error("aucun token saisi");
+  const entetes = { Authorization: "Bearer " + d.token, Accept: "application/vnd.github+json" };
+  let sha;
+  const g = await fetch(urlApiContenu(chemin) + "?ref=" + encodeURIComponent(d.branche), { headers: entetes, cache: "no-store" });
+  if(g.ok) sha = (await g.json()).sha;
+  else if(g.status !== 404) throw new Error("lecture du dépôt impossible (" + g.status + ")");
+  afficherEtat("Envoi de la liste vers le dépôt GitHub…");
+  const corps = { message, content: base64Utf8(JSON.stringify(objet)), branch: d.branche };
+  if(sha) corps.sha = sha;
+  const p = await fetch(urlApiContenu(chemin), { method: "PUT", headers: { ...entetes, "Content-Type": "application/json" }, body: JSON.stringify(corps) });
+  if(!p.ok) throw new Error("écriture refusée par GitHub (" + p.status + ")");
+}
+
+/* ---------- Préparation depuis la source (France : geo.api.gouv.fr ; Vietnam : OpenStreetMap) ---------- */
+async function preparerDepuisSource(p){
+  const d = [];
+  if(p === "fr"){
+    const brut = JSON.parse(await telechargerTexte(URL_COMMUNES, {}, "des communes (geo.api.gouv.fr)"));
+    const total = brut.length;
+    for(let i = 0; i < total; i++){
+      const c = brut[i];
+      if(!c.centre || !c.centre.coordinates) continue;
+      const [lon, lat] = c.centre.coordinates, pop = c.population || 0;
+      d.push([c.nom, +lat.toFixed(4), +lon.toFixed(4), pop, c.codeDepartement ? "Département " + c.codeDepartement : "", pop]);
+    }
+    afficherEtat(`${nf(d.length)} communes retenues sur ${nf(total)} reçues.`);
+    return d;
+  }
+  let texte = null, derniere = null;
+  for(const serveur of SERVEURS_OVERPASS){
+    try{
+      texte = await telechargerTexte(serveur, {
+        method: "POST", body: "data=" + encodeURIComponent(REQUETE_VN),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      }, "des localités du Vietnam (OpenStreetMap)");
+      break;
+    }catch(e){ derniere = e; afficherEtat("Serveur OpenStreetMap indisponible, essai d'un autre…"); }
+  }
+  if(texte === null) throw derniere || new Error("aucun serveur OpenStreetMap n'a répondu");
+  const lignes = texte.split("\n"), total = lignes.length;
   for(let i = 0; i < total; i++){
-    const c = brut[i];
-    if(!c.centre || !c.centre.coordinates) continue;
-    const [lon, lat] = c.centre.coordinates;
-    d.push([c.nom, +lat.toFixed(4), +lon.toFixed(4), c.population || 0, c.codeDepartement || ""]);
+    const f = lignes[i].split("\t");
+    if(f.length < 6) continue;
+    const lat = parseFloat(f[0]), lon = parseFloat(f[1]), nom = (f[2] || f[3] || "").trim(), type = f[5].trim();
+    if(!nom || isNaN(lat) || isNaN(lon) || !TAILLE_TYPE[type]) continue;
+    const pop = parseInt((f[4] || "").replace(/\D/g, ""), 10) || 0;
+    d.push([nom, +lat.toFixed(4), +lon.toFixed(4), pop, LIBELLE_TYPE[type] + ", d'après OpenStreetMap", pop || TAILLE_TYPE[type]]);
   }
-  afficherEtat(`${nf(d.length)} communes retenues sur ${nf(total)} reçues.`);
-  ecrireJSON(CLE_CACHE, { date: Date.now(), d });
+  afficherEtat(`${nf(d.length)} localités retenues sur ${nf(total)} lignes reçues.`);
+  if(!d.length) throw new Error("la réponse d'OpenStreetMap ne contient aucune localité");
   return d;
+}
+
+/* Source puis enregistrement local, et dans le dépôt si un token est saisi */
+async function construireDepuisSource(p){
+  const d = await preparerDepuisSource(p);
+  const date = new Date().toISOString();
+  const c = { d, date, origine: "source" };
+  await idbEcrire("lieux_" + p, c);
+  if(etat.depot.token){
+    try{
+      await ecrireDepot(PAYS[p].fichier,
+        { version: 1, pays: p, date, champs: ["nom", "lat", "lon", "population", "info", "taille"], d },
+        `Alentours : liste ${PAYS[p].nom} (${nf(d.length)} ${PAYS[p].lieux})`);
+      c.origine = "source, enregistrée dans le dépôt";
+      await idbEcrire("lieux_" + p, c);
+    }catch(e){
+      c.origine = "source (envoi au dépôt impossible : " + e.message + ")";
+    }
+  }
+  return c;
+}
+
+/* ---------- Chargement des données d'un pays ---------- */
+async function chargerLieux(p, forcerDepot){
+  if(!forcerDepot){
+    if(etat.donnees[p]) return etat.donnees[p];
+    const c = await idbLire("lieux_" + p);
+    if(c && Array.isArray(c.d) && c.d.length) return (etat.donnees[p] = c);
+    if(p === "fr"){ // reprise de l'ancien cache localStorage (v1.0-1.1), puis libération de la place
+      const ancien = lireJSON(ANCIEN_CACHE, null);
+      try{ localStorage.removeItem(ANCIEN_CACHE); }catch(e){}
+      if(ancien && Array.isArray(ancien.d) && ancien.d.length > 1000){
+        const m = { d: ancien.d.map(x => [x[0], x[1], x[2], x[3], x[4] ? "Département " + x[4] : "", x[3]]),
+                    date: new Date(ancien.date || Date.now()).toISOString(), origine: "ancien cache" };
+        await idbEcrire("lieux_fr", m);
+        return (etat.donnees.fr = m);
+      }
+    }
+  }
+  try{
+    afficherEtat(`Lecture de la liste ${PAYS[p].nom} dans le dépôt…`);
+    const f = await lireDepot(PAYS[p].fichier);
+    if(f && Array.isArray(f.d) && f.d.length){
+      const c = { d: f.d, date: f.date || new Date().toISOString(), origine: "dépôt GitHub" };
+      await idbEcrire("lieux_" + p, c);
+      afficherEtat(`${nf(c.d.length)} ${PAYS[p].lieux} lues dans le dépôt.`);
+      return (etat.donnees[p] = c);
+    }
+  }catch(e){
+    afficherEtat(e.statut === 404
+      ? `Liste ${PAYS[p].nom} absente du dépôt : préparation depuis la source…`
+      : `Dépôt illisible (${e.message}) : préparation depuis la source…`);
+  }
+  return (etat.donnees[p] = await construireDepuisSource(p));
+}
+
+function majEtatDonnees(){
+  const c = etat.donnees[etat.pays];
+  $("etatDonnees").textContent = c
+    ? `${PAYS[etat.pays].drapeau} ${nf(c.d.length)} ${PAYS[etat.pays].lieux}, liste du ${dateCourte(c.date)} (${c.origine}).`
+    : `${PAYS[etat.pays].drapeau} Liste pas encore chargée.`;
+}
+
+async function activerDonnees(p, forcerDepot, depuisSource){
+  try{
+    let c;
+    if(depuisSource){ c = etat.donnees[p] = await construireDepuisSource(p); }
+    else c = await chargerLieux(p, forcerDepot);
+    if(etat.pays !== p) return;
+    etat.communes = c.d;
+    etat.noms = c.d.map(x => norm(x[0]));
+    etat.dernierCalcul = null;
+    majEtatDonnees();
+    if(!positionCourante()) afficherEtat("Recherche de votre position…");
+    rafraichir(true);
+  }catch(e){
+    afficherEtat(`Impossible de charger les ${PAYS[p].lieux} (${e.message}). Vérifiez la connexion puis réessayez depuis les réglages.`, true);
+  }
 }
 
 function calculerVoisines(pos){
   const { lat, lon } = pos, k = Math.cos(lat * Math.PI / 180), C = etat.communes, liste = [];
   for(let i = 0; i < C.length; i++){
     const c = C[i];
-    if(c[3] < etat.popMin) continue;
+    if(c[5] < etat.popMin) continue;
     const dy = c[1] - lat, dx = (c[2] - lon) * k;
     liste.push([dx*dx + dy*dy, i]);
   }
   liste.sort((a, b) => a[0] - b[0]);
   return liste.slice(0, etat.nb).map(([, i]) => {
     const c = C[i];
-    return { nom: c[0], lat: c[1], lon: c[2], pop: c[3], dep: c[4],
+    return { nom: c[0], lat: c[1], lon: c[2], pop: c[3], info: c[4], taille: c[5],
              d: distanceKm(lat, lon, c[1], c[2]), cap: cap(lat, lon, c[1], c[2]) };
   });
 }
@@ -427,28 +653,51 @@ function rafraichir(force){
   if(!aBouge && !aTourne) return;
   if(aBouge){
     etat.dernierCalcul = { lat: pos.lat, lon: pos.lon, nb: etat.nb, popMin: etat.popMin };
-    etat.selection = calculerVoisines(pos);
+    const sel = calculerVoisines(pos);
+    if(sel.length && sel[0].d > 100){ etat.selection = []; etat.loin = sel[0].d; }
+    else { etat.selection = sel; etat.loin = null; }
     dessinerCarte();
   }
   etat.derniereRot = rot;
-  afficherEtat("");
+  if(etat.loin) afficherEtat(`Vous êtes à ${nf(Math.round(etat.loin))} km de la localité la plus proche ${PAYS[etat.pays].dans}. Placez-vous depuis l'onglet Carte, ou changez de pays dans les réglages.`, true);
+  else afficherEtat("");
   dessinerRadar(false);
 }
 
 function majSource(){
-  const s = $("source");
+  const s = $("source"), dr = PAYS[etat.pays].drapeau + " ";
   if(etat.mode === "sim"){
-    s.textContent = etat.orientation === "marche" ? "Position simulée, nord en haut" : "Position simulée";
+    s.textContent = dr + (etat.orientation === "marche" ? "Position simulée, nord en haut" : "Position simulée");
     s.classList.add("sim");
     $("btnReel").hidden = false;
     return;
   }
   s.classList.remove("sim");
   $("btnReel").hidden = true;
-  if(!etat.gps){ s.textContent = "Recherche de votre position…"; return; }
+  if(!etat.gps){ s.textContent = dr + "Recherche de votre position…"; return; }
   let t = `Position réelle à ${Math.round(etat.gps.prec)} m près`;
   if(etat.orientation === "marche") t += suitLaMarche() ? ", sens de la marche" : ", nord en haut en attendant un déplacement";
-  s.textContent = t;
+  s.textContent = dr + t;
+}
+
+/* ---------- Changement de pays ---------- */
+function changerPays(p){
+  if(p === etat.pays) return;
+  etat.pays = p;
+  sauverReglages();
+  etat.communes = null; etat.noms = null;
+  etat.selection = []; etat.loin = null; etat.dernierCalcul = null; etat.affiche = null;
+  if(etat.mode === "sim" && !etat.sims[p]){ etat.mode = "gps"; sauverPosition(); }
+  $("noteVn").hidden = p !== "vn";
+  rendre(null);
+  majSource();
+  majEtatDonnees();
+  if(etat.carte){
+    const q = positionCourante();
+    etat.carte.setView(q ? [q.lat, q.lon] : PAYS[p].centre, q ? 11 : PAYS[p].zoom);
+    dessinerCarte();
+  }
+  activerDonnees(p, false, false);
 }
 
 /* ---------- Direction de la marche ---------- */
@@ -459,7 +708,6 @@ function majCapMarche(p){
     etat.pointCap = { lat: c.latitude, lon: c.longitude };
     return;
   }
-  // Sinon : direction déduite de deux positions assez éloignées
   const cur = { lat: c.latitude, lon: c.longitude };
   if(!etat.pointCap){ etat.pointCap = cur; return; }
   const d = distanceKm(etat.pointCap.lat, etat.pointCap.lon, cur.lat, cur.lon) * 1000;
@@ -496,13 +744,11 @@ function calculerDisposition(W, H){
 
   const anneaux = paliersAnneaux(dmax).map(p => ({ r: echelle(p), label: formatDistance(p), op: 1 }));
 
-  // Positions (cap réel moins l'orientation, distance en racine carrée pour aérer le centre)
   const pts = sel.map(s => {
     const r = echelle(s.d), a = (s.cap - rot) * Math.PI / 180;
-    return { s, x: cx + r * Math.sin(a), y: cy - r * Math.cos(a), r: rayonSphere(s.pop) };
+    return { s, x: cx + r * Math.sin(a), y: cy - r * Math.cos(a), r: rayonSphere(s.taille) };
   });
 
-  // Écartement léger des sphères qui se chevauchent
   for(let it = 0; it < 60; it++){
     let bouge = false;
     for(let i = 0; i < pts.length; i++){
@@ -528,7 +774,6 @@ function calculerDisposition(W, H){
     if(!bouge) break;
   }
 
-  // Étiquettes placées sans chevauchement quand c'est possible
   const occupes = [{ x1: cx - 14, y1: cy - 14, x2: cx + 14, y2: cy + 14 }];
   for(const p of pts) occupes.push({ x1: p.x - p.r, y1: p.y - p.r, x2: p.x + p.r, y2: p.y + p.r });
   const chevauche = b => occupes.some(o => !(b.x2 < o.x1 || b.x1 > o.x2 || b.y2 < o.y1 || b.y1 > o.y2));
@@ -552,8 +797,8 @@ function calculerDisposition(W, H){
 
   return {
     W, H, cx, cy, R, rot, fleche: suitLaMarche(), anneaux,
-    items: pts.map(p => ({ key: p.s.nom + "|" + p.s.dep, s: p.s, x: p.x, y: p.y, r: p.r,
-                           cls: classeTaille(p.s.pop), lab: p.lab, op: 1 }))
+    items: pts.map(p => ({ key: p.s.nom + "|" + p.s.lat + "|" + p.s.lon, s: p.s, x: p.x, y: p.y, r: p.r,
+                           cls: classeTaille(p.s.taille), lab: p.lab, op: 1 }))
   };
 }
 
@@ -571,7 +816,6 @@ function rendre(f){
     el("text", { x: cx + 4, y: cy - a.r - 4, class: "etqAnneau" }, g).textContent = a.label;
   }
 
-  // Repère du nord (tourne avec le radar)
   const aN = -f.rot * Math.PI / 180, rN = R + 26;
   const xN = Math.min(W - 12, Math.max(12, cx + rN * Math.sin(aN)));
   const yN = Math.min(H - 6, Math.max(16, cy - rN * Math.cos(aN) + 5));
@@ -654,11 +898,11 @@ function dessinerRadar(immediat){
   etat.anim = requestAnimationFrame(pas);
 }
 
-/* ---------- Fiche commune ---------- */
+/* ---------- Fiche localité ---------- */
 function ouvrirFiche(s){
   etat.communeFiche = s;
   $("ficheNom").textContent = s.nom;
-  $("ficheDep").textContent = s.dep ? "Département " + s.dep : "";
+  $("ficheDep").textContent = s.info || "";
   $("ficheDist").textContent = formatDistance(s.d) + " à vol d'oiseau";
   let dir = directionTexte(s.cap);
   if(suitLaMarche()) dir += ", " + directionRelative(s.cap - etat.capMarche);
@@ -672,7 +916,7 @@ function fermerFiche(){ $("fiche").hidden = true; }
 function initCarte(){
   if(etat.carte) return;
   const p = positionCourante();
-  etat.carte = L.map("carte").setView(p ? [p.lat, p.lon] : [46.6, 2.5], p ? 11 : 6);
+  etat.carte = L.map("carte").setView(p ? [p.lat, p.lon] : PAYS[etat.pays].centre, p ? 11 : PAYS[etat.pays].zoom);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18, attribution: "© OpenStreetMap"
   }).addTo(etat.carte);
@@ -691,8 +935,8 @@ function dessinerCarte(){
   for(const s of etat.selection){
     L.polyline([[p.lat, p.lon], [s.lat, s.lon]], { color: trait, weight: 1.5, opacity: .8, dashArray: "4 4", interactive: false }).addTo(g);
     L.circleMarker([s.lat, s.lon], {
-      radius: rayonSphere(s.pop) * .8, color: encre, weight: 1.5,
-      fillColor: couleur(classeTaille(s.pop)), fillOpacity: .95
+      radius: rayonSphere(s.taille) * .8, color: encre, weight: 1.5,
+      fillColor: couleur(classeTaille(s.taille)), fillOpacity: .95
     }).bindTooltip(s.nom, { permanent: true, direction: "top", offset: [0, -6], className: "etq" })
       .on("click", ev => { L.DomEvent.stopPropagation(ev); ouvrirFiche(s); })
       .addTo(g);
@@ -701,21 +945,21 @@ function dessinerCarte(){
 }
 
 function placerSimulation(lat, lon){
-  etat.sim = { lat, lon };
+  etat.sims[etat.pays] = { lat, lon };
   etat.mode = "sim";
-  ecrireJSON(CLE_POSITION, { mode: etat.mode, sim: etat.sim });
+  sauverPosition();
   rafraichir(true);
 }
 
 function revenirReel(){
   etat.mode = "gps";
-  ecrireJSON(CLE_POSITION, { mode: etat.mode, sim: etat.sim });
+  sauverPosition();
   if(!etat.gps) afficherEtat("Recherche de votre position…");
   rafraichir(true);
   if(etat.carte && etat.gps) etat.carte.setView([etat.gps.lat, etat.gps.lon], 11);
 }
 
-/* ---------- Recherche de commune ---------- */
+/* ---------- Recherche de localité ---------- */
 function rechercher(){
   const q = norm($("rech").value.trim()), ul = $("resultats");
   ul.innerHTML = "";
@@ -723,13 +967,15 @@ function rechercher(){
   const res = [];
   for(let i = 0; i < etat.noms.length; i++){
     const k = etat.noms[i].indexOf(q);
-    if(k >= 0) res.push([k === 0 ? 0 : 1, -etat.communes[i][3], i]);
+    if(k >= 0) res.push([k === 0 ? 0 : 1, -etat.communes[i][5], i]);
   }
   res.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   for(const [, , i] of res.slice(0, 8)){
     const c = etat.communes[i];
     const li = document.createElement("li"), b = document.createElement("button");
-    b.innerHTML = `${c[0]} <small>(${c[4]}, ${nf(c[3])} hab.)</small>`;
+    const detail = c[4] + (c[3] ? ", " + nf(c[3]) + " hab." : "");
+    b.append(c[0] + " ");
+    const sm = document.createElement("small"); sm.textContent = "(" + detail + ")"; b.appendChild(sm);
     b.addEventListener("click", () => {
       $("rech").value = ""; ul.innerHTML = ""; $("rech").blur();
       placerSimulation(c[1], c[2]);
@@ -775,8 +1021,17 @@ function remplirHistorique(){
   ).join("");
 }
 
+/* ---------- Retour visuel sur un bouton ---------- */
+async function boutonTache(bouton, tache){
+  const texte = bouton.textContent;
+  bouton.disabled = true; bouton.textContent = "En cours…";
+  try{ await tache(); bouton.textContent = "✓"; }
+  catch(e){ bouton.textContent = "Échec"; }
+  setTimeout(() => { bouton.textContent = texte; bouton.disabled = false; }, 2000);
+}
+
 /* ---------- Démarrage ---------- */
-async function demarrer(){
+function demarrer(){
   $("btnVersion").textContent = "v" + VERSION;
   remplirHistorique();
 
@@ -785,15 +1040,31 @@ async function demarrer(){
   if(reg.popMin !== undefined) etat.popMin = reg.popMin;
   if(reg.orientation === "marche") etat.orientation = "marche";
   if(reg.rendu === "doux") etat.rendu = "doux";
+  if(reg.pays === "vn") etat.pays = "vn";
   $("selNombre").value = String(etat.nb);
   $("selPop").value = String(etat.popMin);
+  $("noteVn").hidden = etat.pays !== "vn";
+
   const posSauvee = lireJSON(CLE_POSITION, null);
-  if(posSauvee && posSauvee.sim){ etat.sim = posSauvee.sim; etat.mode = posSauvee.mode === "sim" ? "sim" : "gps"; }
+  if(posSauvee){
+    if(posSauvee.sims) etat.sims = { fr: posSauvee.sims.fr || null, vn: posSauvee.sims.vn || null };
+    else if(posSauvee.sim) etat.sims.fr = posSauvee.sim; // format v1.0-1.1
+    etat.mode = posSauvee.mode === "sim" && etat.sims[etat.pays] ? "sim" : "gps";
+  }
+  etat.depot = { ...DEPOT_DEFAUT, ...lireJSON(CLE_DEPOT, {}) };
+  $("depOwner").value = etat.depot.owner;
+  $("depRepo").value = etat.depot.repo;
+  $("depBranche").value = etat.depot.branche;
+  $("depToken").value = etat.depot.token;
 
   $("selNombre").addEventListener("change", e => { etat.nb = +e.target.value; sauverReglages(); rafraichir(true); });
   $("selPop").addEventListener("change", e => { etat.popMin = +e.target.value; sauverReglages(); rafraichir(true); });
 
   // Page Réglages
+  document.querySelectorAll('input[name="pays"]').forEach(r => {
+    r.checked = r.value === etat.pays;
+    r.addEventListener("change", () => changerPays(r.value));
+  });
   document.querySelectorAll('input[name="orientation"]').forEach(r => {
     r.checked = r.value === etat.orientation;
     r.addEventListener("change", () => { etat.orientation = r.value; sauverReglages(); rafraichir(true); });
@@ -802,23 +1073,35 @@ async function demarrer(){
     r.checked = r.value === etat.rendu;
     r.addEventListener("change", () => { etat.rendu = r.value; sauverReglages(); });
   });
-  $("btnReglages").addEventListener("click", () => $("dlgReglages").showModal());
+  $("btnReglages").addEventListener("click", () => { majEtatDonnees(); $("dlgReglages").showModal(); });
   $("btnFermerReglages").addEventListener("click", () => $("dlgReglages").close());
+  $("btnSauverDepot").addEventListener("click", e => boutonTache(e.currentTarget, async () => {
+    const d = {
+      owner: $("depOwner").value.trim() || DEPOT_DEFAUT.owner,
+      repo: $("depRepo").value.trim() || DEPOT_DEFAUT.repo,
+      branche: $("depBranche").value.trim() || DEPOT_DEFAUT.branche,
+      token: $("depToken").value.trim()
+    };
+    etat.depot = d;
+    if(!ecrireJSON(CLE_DEPOT, d)) throw new Error("enregistrement impossible");
+  }));
+  $("btnRechargerDepot").addEventListener("click", e => boutonTache(e.currentTarget, async () => {
+    const p = etat.pays;
+    etat.donnees[p] = null;
+    await activerDonnees(p, true, false);
+    majEtatDonnees();
+  }));
+  $("btnDepuisSource").addEventListener("click", e => boutonTache(e.currentTarget, async () => {
+    const p = etat.pays;
+    await activerDonnees(p, false, true);
+    majEtatDonnees();
+  }));
 
   document.querySelectorAll(".onglets button").forEach(b => b.addEventListener("click", () => montrerVue(b.dataset.vue)));
   $("btnReel").addEventListener("click", revenirReel);
   $("btnVersion").addEventListener("click", () => $("dlgVersion").showModal());
   $("btnFermerVersion").addEventListener("click", () => $("dlgVersion").close());
-  $("btnRecharger").addEventListener("click", async () => {
-    $("dlgVersion").close();
-    try{
-      etat.communes = await chargerCommunes(true);
-      etat.noms = etat.communes.map(c => norm(c[0]));
-      rafraichir(true);
-    }catch(e){ afficherEtat("Rechargement impossible : " + e.message + ".", true); }
-  });
 
-  // Clic sur une sphère (délégation, car le radar est redessiné à chaque image)
   const trouver = e => {
     const g = e.target.closest("g[data-k]");
     if(!g || !etat.affiche) return null;
@@ -839,14 +1122,7 @@ async function demarrer(){
 
   majSource();
   demarrerGps();
-  try{
-    etat.communes = await chargerCommunes(false);
-    etat.noms = etat.communes.map(c => norm(c[0]));
-    if(!positionCourante()) afficherEtat("Recherche de votre position…");
-    rafraichir(true);
-  }catch(e){
-    afficherEtat("Impossible de charger la liste des communes (" + e.message + "). Vérifiez la connexion puis rechargez la page.", true);
-  }
+  activerDonnees(etat.pays, false, false);
 }
 demarrer();
 </script>
