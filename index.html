@@ -42,7 +42,7 @@ button{ cursor:pointer; }
 :focus-visible{ outline:3px solid var(--moi); outline-offset:2px; }
 
 /* En-tête */
-.barre{ display:flex; align-items:center; gap:12px; padding:10px 16px 8px; }
+.barre{ display:flex; align-items:center; gap:10px; padding:10px 16px 8px; }
 .titre{ flex:1; min-width:0; }
 .titre h1{ margin:0; font-size:28px; font-weight:700; letter-spacing:-.01em; line-height:1; }
 .source{ display:block; margin-top:4px; font-size:15px; color:var(--doux); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -51,6 +51,11 @@ button{ cursor:pointer; }
   border:0; border-radius:999px; background:var(--moi); color:#fff;
   font-weight:700; font-size:17px; padding:7px 14px; flex-shrink:0;
 }
+.roue{
+  border:0; background:transparent; color:var(--encre); padding:6px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; border-radius:50%;
+}
+.roue svg{ width:26px; height:26px; }
 .reel{
   border:2px solid var(--ville); background:transparent; color:var(--ville);
   border-radius:999px; padding:4px 10px; font-weight:600; font-size:15px; flex-shrink:0;
@@ -73,7 +78,8 @@ main{ flex:1; min-height:0; position:relative; }
 .anneau{ fill:none; stroke:var(--anneau); stroke-width:1.5; stroke-dasharray:3 5; }
 .etqAnneau{ fill:var(--doux); font-size:12px; }
 .nord{ fill:var(--doux); font-size:15px; font-weight:700; text-anchor:middle; }
-.ligne{ stroke:var(--trait); stroke-width:1.6; opacity:.75; }
+.nord.tourne{ fill:var(--ville); }
+.ligne{ stroke:var(--trait); stroke-width:1.6; }
 .sphere{ stroke:var(--encre); stroke-width:1.5; }
 .sphere.village{ fill:var(--village); }
 .sphere.bourg{ fill:var(--bourg); }
@@ -81,7 +87,7 @@ main{ flex:1; min-height:0; position:relative; }
 .groupe{ cursor:pointer; }
 .nom{ fill:var(--encre); font-size:15px; font-weight:700; paint-order:stroke; stroke:var(--papier); stroke-width:4px; stroke-linejoin:round; }
 .dist{ fill:var(--doux); font-size:13px; paint-order:stroke; stroke:var(--papier); stroke-width:4px; stroke-linejoin:round; }
-.moi{ fill:var(--moi); stroke:var(--papier); stroke-width:3; }
+.moi{ fill:var(--moi); stroke:var(--papier); stroke-width:3; stroke-linejoin:round; }
 .pouls{ fill:var(--moi); opacity:.25; transform-box:fill-box; transform-origin:center; animation:pouls 2.4s ease-out infinite; }
 @keyframes pouls{ from{ transform:scale(1); opacity:.35; } to{ transform:scale(3.2); opacity:0; } }
 @media (prefers-reduced-motion: reduce){ .pouls{ animation:none; } }
@@ -133,10 +139,10 @@ main{ flex:1; min-height:0; position:relative; }
 .fermer{ position:absolute; top:12px; right:14px; border:0; background:transparent; font-size:26px; line-height:1; color:var(--doux); }
 .btnSecondaire{ border:1px solid var(--moi); color:var(--moi); background:transparent; border-radius:8px; padding:8px 14px; font-weight:600; }
 
-/* Historique des versions */
+/* Fenêtres (historique, réglages) */
 dialog{
   border:0; border-radius:14px; padding:18px 20px; max-width:min(92vw,480px); width:100%;
-  background:var(--surface); color:var(--encre); max-height:80vh;
+  background:var(--surface); color:var(--encre); max-height:84vh;
 }
 dialog::backdrop{ background:rgba(0,0,0,.4); }
 dialog h2{ margin:0 0 10px; font-size:24px; }
@@ -145,6 +151,17 @@ dialog h2{ margin:0 0 10px; font-size:24px; }
 .histo ul{ margin:0; padding-left:20px; line-height:1.4; }
 .piedDialog{ display:flex; gap:10px; justify-content:space-between; flex-wrap:wrap; margin-top:18px; }
 .btnPrincipal{ border:0; background:var(--moi); color:#fff; border-radius:8px; padding:8px 16px; font-weight:600; }
+
+fieldset{ border:0; margin:0 0 16px; padding:0; }
+legend{ font-size:19px; font-weight:700; padding:0; margin-bottom:6px; }
+.choix{
+  display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start;
+  padding:10px 12px; border:1px solid var(--anneau); border-radius:10px; margin-bottom:8px; cursor:pointer;
+}
+.choix:has(input:checked){ border-color:var(--moi); box-shadow:inset 0 0 0 1px var(--moi); }
+.choix input{ margin-top:4px; width:18px; height:18px; accent-color:var(--moi); }
+.choix b{ display:block; font-size:17px; }
+.choix small{ display:block; color:var(--doux); font-size:15px; line-height:1.3; margin-top:2px; }
 </style>
 </head>
 <body>
@@ -155,7 +172,10 @@ dialog h2{ margin:0 0 10px; font-size:24px; }
     <span id="source" class="source">Recherche de votre position…</span>
   </div>
   <button id="btnReel" class="reel" hidden>Revenir à ma position</button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.0</button>
+  <button id="btnReglages" class="roue" aria-label="Réglages">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.1</button>
 </header>
 
 <main>
@@ -213,6 +233,36 @@ dialog h2{ margin:0 0 10px; font-size:24px; }
   <button class="btnSecondaire" id="ficheCarte">Voir sur la carte</button>
 </div>
 
+<dialog id="dlgReglages">
+  <h2>Réglages</h2>
+  <fieldset>
+    <legend>Orientation du radar</legend>
+    <label class="choix">
+      <input type="radio" name="orientation" value="nord">
+      <span><b>Nord en haut</b><small>Fonctionnement d'origine : le radar ne tourne jamais.</small></span>
+    </label>
+    <label class="choix">
+      <input type="radio" name="orientation" value="marche">
+      <span><b>Sens de la marche</b><small>Ce qui est devant vous est en haut. La direction vient du GPS pendant le déplacement ; à l'arrêt, la dernière direction connue est conservée. Le N rouge indique alors le nord.</small></span>
+    </label>
+  </fieldset>
+  <fieldset>
+    <legend>Mise à jour de l'affichage</legend>
+    <label class="choix">
+      <input type="radio" name="rendu" value="instantane">
+      <span><b>Redessiner d'un coup</b><small>Fonctionnement d'origine : le radar est refait instantanément à chaque nouvelle position.</small></span>
+    </label>
+    <label class="choix">
+      <input type="radio" name="rendu" value="doux">
+      <span><b>Glissement en douceur</b><small>Les communes glissent vers leur nouvelle place ; celles qui arrivent ou partent apparaissent et s'effacent progressivement.</small></span>
+    </label>
+  </fieldset>
+  <div class="piedDialog">
+    <span></span>
+    <button class="btnPrincipal" id="btnFermerReglages">Fermer</button>
+  </div>
+</dialog>
+
 <dialog id="dlgVersion">
   <h2>Historique des versions</h2>
   <div id="histo" class="histo"></div>
@@ -226,12 +276,18 @@ dialog h2{ margin:0 0 10px; font-size:24px; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.0";
+const VERSION = "1.1";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
     "Onglet Carte pour se placer n'importe où en France (toucher la carte ou chercher une commune).",
     "Communes INSEE via geo.api.gouv.fr, mises en cache sur l'appareil."
+  ]},
+  { v: "1.1", date: "24/09/2026", notes: [
+    "Page Réglages (roue dentée) : choix de l'orientation et du mode de mise à jour.",
+    "Option « Sens de la marche » : radar orienté selon la direction GPS, N rouge pour le nord, flèche au centre.",
+    "Option « Glissement en douceur » : transitions animées entre deux positions.",
+    "Fiche commune : position relative (devant, à droite…) quand le radar suit la marche."
   ]}
 ];
 
@@ -240,6 +296,7 @@ const CLE_REGLAGES = "alentours_reglages";
 const CLE_POSITION = "alentours_position";
 const URL_COMMUNES = "https://geo.api.gouv.fr/communes?fields=nom,centre,population,codeDepartement&format=json&geometry=centre";
 const NS = "http://www.w3.org/2000/svg";
+const DUREE_ANIM = 800;
 const $ = id => document.getElementById(id);
 
 const etat = {
@@ -247,13 +304,20 @@ const etat = {
   noms: null,          // noms normalisés pour la recherche
   gps: null, sim: null, mode: "gps",
   nb: 10, popMin: 0,
-  selection: [], dernierCalcul: null,
+  orientation: "nord", // "nord" | "marche"
+  rendu: "instantane", // "instantane" | "doux"
+  capMarche: null, pointCap: null,
+  selection: [], dernierCalcul: null, derniereRot: null,
+  affiche: null, anim: null,
   carte: null, couche: null, communeFiche: null
 };
 
 /* ---------- Stockage ---------- */
 function lireJSON(cle, def){ try{ const v = localStorage.getItem(cle); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
 function ecrireJSON(cle, v){ try{ localStorage.setItem(cle, JSON.stringify(v)); return true; }catch(e){ return false; } }
+function sauverReglages(){
+  ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin, orientation: etat.orientation, rendu: etat.rendu });
+}
 
 /* ---------- Utilitaires ---------- */
 function afficherEtat(txt, erreur){
@@ -269,9 +333,13 @@ function formatDistance(d){
   if(d < 10) return d.toFixed(1).replace(".", ",") + " km";
   return Math.round(d) + " km";
 }
-function directionTexte(cap){
+function directionTexte(c){
   const dirs = ["au nord", "au nord-est", "à l'est", "au sud-est", "au sud", "au sud-ouest", "à l'ouest", "au nord-ouest"];
-  return dirs[Math.round(cap / 45) % 8];
+  return dirs[Math.round(c / 45) % 8];
+}
+function directionRelative(d){
+  const noms = ["devant vous", "devant à droite", "à votre droite", "derrière à droite", "derrière vous", "derrière à gauche", "à votre gauche", "devant à gauche"];
+  return noms[Math.round(((d % 360) + 360) % 360 / 45) % 8];
 }
 function distanceKm(lat1, lon1, lat2, lon2){
   const r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
@@ -284,10 +352,14 @@ function cap(lat1, lon1, lat2, lon2){
   const x = Math.cos(p1)*Math.sin(p2) - Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
   return (Math.atan2(y, x) / r + 360) % 360;
 }
+function ecartDeg(b, a){ return ((b - a + 540) % 360) - 180; }                       // de a vers b, en degrés
+function ecartRad(b, a){ const T = 2 * Math.PI; return ((b - a + Math.PI) % T + T) % T - Math.PI; }
 function rayonSphere(pop){ return 5 + 3.2 * Math.log10(Math.max(pop, 10)); }
 function classeTaille(pop){ return pop >= 20000 ? "ville" : pop >= 2000 ? "bourg" : "village"; }
 function couleur(nom){ return getComputedStyle(document.documentElement).getPropertyValue("--" + nom).trim(); }
 function positionCourante(){ return etat.mode === "sim" ? etat.sim : etat.gps; }
+function suitLaMarche(){ return etat.orientation === "marche" && etat.mode === "gps" && etat.capMarche !== null; }
+function rotationRadar(){ return suitLaMarche() ? etat.capMarche : 0; }
 
 /* ---------- Données des communes ---------- */
 async function chargerCommunes(forcer){
@@ -348,29 +420,56 @@ function rafraichir(force){
   const pos = positionCourante();
   if(!pos || !etat.communes) return;
   const dc = etat.dernierCalcul;
-  if(!force && dc && dc.nb === etat.nb && dc.popMin === etat.popMin &&
-     distanceKm(dc.lat, dc.lon, pos.lat, pos.lon) < 0.03) return;
-  etat.dernierCalcul = { lat: pos.lat, lon: pos.lon, nb: etat.nb, popMin: etat.popMin };
-  etat.selection = calculerVoisines(pos);
+  const aBouge = force || !dc || dc.nb !== etat.nb || dc.popMin !== etat.popMin ||
+                 distanceKm(dc.lat, dc.lon, pos.lat, pos.lon) >= 0.03;
+  const rot = rotationRadar();
+  const aTourne = etat.derniereRot === null || Math.abs(ecartDeg(rot, etat.derniereRot)) >= 10;
+  if(!aBouge && !aTourne) return;
+  if(aBouge){
+    etat.dernierCalcul = { lat: pos.lat, lon: pos.lon, nb: etat.nb, popMin: etat.popMin };
+    etat.selection = calculerVoisines(pos);
+    dessinerCarte();
+  }
+  etat.derniereRot = rot;
   afficherEtat("");
-  dessinerRadar();
-  dessinerCarte();
+  dessinerRadar(false);
 }
 
 function majSource(){
   const s = $("source");
   if(etat.mode === "sim"){
-    s.textContent = "Position simulée";
+    s.textContent = etat.orientation === "marche" ? "Position simulée, nord en haut" : "Position simulée";
     s.classList.add("sim");
     $("btnReel").hidden = false;
-  } else {
-    s.classList.remove("sim");
-    s.textContent = etat.gps ? `Position réelle, à ${Math.round(etat.gps.prec)} m près` : "Recherche de votre position…";
-    $("btnReel").hidden = true;
+    return;
+  }
+  s.classList.remove("sim");
+  $("btnReel").hidden = true;
+  if(!etat.gps){ s.textContent = "Recherche de votre position…"; return; }
+  let t = `Position réelle à ${Math.round(etat.gps.prec)} m près`;
+  if(etat.orientation === "marche") t += suitLaMarche() ? ", sens de la marche" : ", nord en haut en attendant un déplacement";
+  s.textContent = t;
+}
+
+/* ---------- Direction de la marche ---------- */
+function majCapMarche(p){
+  const c = p.coords;
+  if(c.heading !== null && !isNaN(c.heading) && c.speed !== null && c.speed > 0.8){
+    etat.capMarche = c.heading;
+    etat.pointCap = { lat: c.latitude, lon: c.longitude };
+    return;
+  }
+  // Sinon : direction déduite de deux positions assez éloignées
+  const cur = { lat: c.latitude, lon: c.longitude };
+  if(!etat.pointCap){ etat.pointCap = cur; return; }
+  const d = distanceKm(etat.pointCap.lat, etat.pointCap.lon, cur.lat, cur.lon) * 1000;
+  if(d >= Math.max(20, c.accuracy || 0)){
+    etat.capMarche = cap(etat.pointCap.lat, etat.pointCap.lon, cur.lat, cur.lon);
+    etat.pointCap = cur;
   }
 }
 
-/* ---------- Radar ---------- */
+/* ---------- Radar : calcul de la disposition ---------- */
 function el(nom, attrs, parent){
   const e = document.createElementNS(NS, nom);
   for(const k in attrs) e.setAttribute(k, attrs[k]);
@@ -387,31 +486,19 @@ function paliersAnneaux(dmax){
   return res;
 }
 
-function dessinerRadar(){
-  const svg = $("radar");
-  const W = svg.clientWidth, H = svg.clientHeight;
-  if(!W || !H) return;
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  svg.innerHTML = "";
+function calculerDisposition(W, H){
   const pos = positionCourante(), sel = etat.selection;
-  if(!pos || !sel.length) return;
-
+  if(!pos || !sel.length) return null;
   const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 48;
+  const rot = rotationRadar();
   const dmax = Math.max(...sel.map(s => s.d)) * 1.05 || 1;
   const echelle = d => R * Math.sqrt(d / dmax);
 
-  // Anneaux de distance
-  for(const p of paliersAnneaux(dmax)){
-    const r = echelle(p);
-    el("circle", { cx, cy, r, class: "anneau" }, svg);
-    const t = el("text", { x: cx + 4, y: cy - r - 4, class: "etqAnneau" }, svg);
-    t.textContent = formatDistance(p);
-  }
-  el("text", { x: cx, y: Math.max(16, cy - R - 26), class: "nord" }, svg).textContent = "N";
+  const anneaux = paliersAnneaux(dmax).map(p => ({ r: echelle(p), label: formatDistance(p), op: 1 }));
 
-  // Positions (cap réel, distance en racine carrée pour aérer le centre)
+  // Positions (cap réel moins l'orientation, distance en racine carrée pour aérer le centre)
   const pts = sel.map(s => {
-    const r = echelle(s.d), a = s.cap * Math.PI / 180;
+    const r = echelle(s.d), a = (s.cap - rot) * Math.PI / 180;
     return { s, x: cx + r * Math.sin(a), y: cy - r * Math.cos(a), r: rayonSphere(s.pop) };
   });
 
@@ -441,21 +528,9 @@ function dessinerRadar(){
     if(!bouge) break;
   }
 
-  // Lignes
-  for(const p of pts) el("line", { x1: cx, y1: cy, x2: p.x, y2: p.y, class: "ligne" }, svg);
-
-  // Sphères
-  const occupes = [{ x1: cx - 14, y1: cy - 14, x2: cx + 14, y2: cy + 14 }];
-  for(const p of pts){
-    occupes.push({ x1: p.x - p.r, y1: p.y - p.r, x2: p.x + p.r, y2: p.y + p.r });
-    const g = el("g", { class: "groupe", tabindex: "0", role: "button", "aria-label": p.s.nom }, svg);
-    el("circle", { cx: p.x, cy: p.y, r: p.r, class: "sphere " + classeTaille(p.s.pop) }, g);
-    g.addEventListener("click", () => ouvrirFiche(p.s));
-    g.addEventListener("keydown", e => { if(e.key === "Enter") ouvrirFiche(p.s); });
-    p.g = g;
-  }
-
   // Étiquettes placées sans chevauchement quand c'est possible
+  const occupes = [{ x1: cx - 14, y1: cy - 14, x2: cx + 14, y2: cy + 14 }];
+  for(const p of pts) occupes.push({ x1: p.x - p.r, y1: p.y - p.r, x2: p.x + p.r, y2: p.y + p.r });
   const chevauche = b => occupes.some(o => !(b.x2 < o.x1 || b.x1 > o.x2 || b.y2 < o.y1 || b.y1 > o.y2));
   const dedans = b => b.x1 >= 2 && b.x2 <= W - 2 && b.y1 >= 2 && b.y2 <= H - 2;
   for(const p of pts){
@@ -470,16 +545,113 @@ function dessinerRadar(){
       const x1 = c.a === "middle" ? c.x - w/2 : c.a === "start" ? c.x : c.x - w;
       return { ...c, b: { x1, y1: c.y - 13, x2: x1 + w, y2: c.y + 17 } };
     });
-    let choix = cands.find(c => dedans(c.b) && !chevauche(c.b)) || cands.find(c => dedans(c.b)) || cands[0];
+    const choix = cands.find(c => dedans(c.b) && !chevauche(c.b)) || cands.find(c => dedans(c.b)) || cands[0];
     occupes.push(choix.b);
-    const t = el("text", { x: choix.x, y: choix.y, "text-anchor": choix.a }, p.g);
-    const t1 = el("tspan", { x: choix.x, class: "nom" }, t); t1.textContent = l1;
-    const t2 = el("tspan", { x: choix.x, dy: 16, class: "dist" }, t); t2.textContent = l2;
+    p.lab = { dx: choix.x - p.x, dy: choix.y - p.y, a: choix.a, l1, l2 };
   }
 
-  // Position
+  return {
+    W, H, cx, cy, R, rot, fleche: suitLaMarche(), anneaux,
+    items: pts.map(p => ({ key: p.s.nom + "|" + p.s.dep, s: p.s, x: p.x, y: p.y, r: p.r,
+                           cls: classeTaille(p.s.pop), lab: p.lab, op: 1 }))
+  };
+}
+
+/* ---------- Radar : dessin d'une image ---------- */
+function rendre(f){
+  const svg = $("radar");
+  svg.innerHTML = "";
+  if(!f) return;
+  const { cx, cy, R, W, H } = f;
+
+  for(const a of f.anneaux){
+    if(a.op < 0.02) continue;
+    const g = el("g", { opacity: a.op.toFixed(3) }, svg);
+    el("circle", { cx, cy, r: a.r, class: "anneau" }, g);
+    el("text", { x: cx + 4, y: cy - a.r - 4, class: "etqAnneau" }, g).textContent = a.label;
+  }
+
+  // Repère du nord (tourne avec le radar)
+  const aN = -f.rot * Math.PI / 180, rN = R + 26;
+  const xN = Math.min(W - 12, Math.max(12, cx + rN * Math.sin(aN)));
+  const yN = Math.min(H - 6, Math.max(16, cy - rN * Math.cos(aN) + 5));
+  el("text", { x: xN, y: yN, class: "nord" + (f.fleche ? " tourne" : "") }, svg).textContent = "N";
+
+  for(const it of f.items){
+    if(it.op < 0.02) continue;
+    el("line", { x1: cx, y1: cy, x2: it.x, y2: it.y, class: "ligne", opacity: (0.75 * it.op).toFixed(3) }, svg);
+  }
+  for(const it of f.items){
+    if(it.op < 0.02) continue;
+    const g = el("g", { class: "groupe", "data-k": it.key, opacity: it.op.toFixed(3), tabindex: "0", role: "button", "aria-label": it.s.nom }, svg);
+    el("circle", { cx: it.x, cy: it.y, r: it.r, class: "sphere " + it.cls }, g);
+    const x = it.x + it.lab.dx, y = it.y + it.lab.dy;
+    const t = el("text", { x, y, "text-anchor": it.lab.a }, g);
+    el("tspan", { x, class: "nom" }, t).textContent = it.lab.l1;
+    el("tspan", { x, dy: 16, class: "dist" }, t).textContent = it.lab.l2;
+  }
+
   el("circle", { cx, cy, r: 8, class: "pouls" }, svg);
-  el("circle", { cx, cy, r: 8, class: "moi" }, svg);
+  if(f.fleche){
+    el("path", { d: `M${cx} ${cy-13} L${cx+9} ${cy+9} L${cx} ${cy+4} L${cx-9} ${cy+9} Z`, class: "moi" }, svg);
+  } else {
+    el("circle", { cx, cy, r: 8, class: "moi" }, svg);
+  }
+}
+
+/* ---------- Radar : transition entre deux images ---------- */
+function polaire(f, it){ return { ang: Math.atan2(it.x - f.cx, -(it.y - f.cy)), rad: Math.hypot(it.x - f.cx, it.y - f.cy) }; }
+
+function interpoler(A, B, t){
+  const e = t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+  const deA = new Map(A.items.map(i => [i.key, i]));
+  const clesB = new Set(B.items.map(i => i.key));
+  const items = [];
+  for(const b of B.items){
+    const a = deA.get(b.key);
+    if(a){
+      const pa = polaire(A, a), pb = polaire(B, b);
+      const ang = pa.ang + ecartRad(pb.ang, pa.ang) * e, rad = pa.rad + (pb.rad - pa.rad) * e;
+      items.push({ ...b, x: B.cx + rad * Math.sin(ang), y: B.cy - rad * Math.cos(ang), op: a.op + (1 - a.op) * e });
+    } else {
+      items.push({ ...b, op: e });
+    }
+  }
+  for(const a of A.items){
+    if(!clesB.has(a.key) && a.op * (1 - e) > 0.02) items.push({ ...a, op: a.op * (1 - e) });
+  }
+  const anneaux = [], reprisA = new Set();
+  for(const b of B.anneaux){
+    const a = A.anneaux.find(x => x.label === b.label);
+    if(a){ reprisA.add(a); anneaux.push({ ...b, r: a.r + (b.r - a.r) * e, op: a.op + (1 - a.op) * e }); }
+    else anneaux.push({ ...b, op: e });
+  }
+  for(const a of A.anneaux) if(!reprisA.has(a) && a.op * (1 - e) > 0.02) anneaux.push({ ...a, op: a.op * (1 - e) });
+  return { ...B, items, anneaux, rot: A.rot + ecartDeg(B.rot, A.rot) * e };
+}
+
+function dessinerRadar(immediat){
+  const svg = $("radar");
+  const W = svg.clientWidth, H = svg.clientHeight;
+  if(!W || !H) return;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const cible = calculerDisposition(W, H);
+  if(etat.anim){ cancelAnimationFrame(etat.anim); etat.anim = null; }
+  const depart = etat.affiche;
+  if(!cible || immediat || etat.rendu !== "doux" || !depart || depart.W !== W || depart.H !== H){
+    rendre(cible);
+    etat.affiche = cible;
+    return;
+  }
+  const t0 = performance.now();
+  const pas = now => {
+    const t = Math.min(1, (now - t0) / DUREE_ANIM);
+    const f = t < 1 ? interpoler(depart, cible, t) : cible;
+    rendre(f);
+    etat.affiche = f;
+    etat.anim = t < 1 ? requestAnimationFrame(pas) : null;
+  };
+  etat.anim = requestAnimationFrame(pas);
 }
 
 /* ---------- Fiche commune ---------- */
@@ -488,7 +660,9 @@ function ouvrirFiche(s){
   $("ficheNom").textContent = s.nom;
   $("ficheDep").textContent = s.dep ? "Département " + s.dep : "";
   $("ficheDist").textContent = formatDistance(s.d) + " à vol d'oiseau";
-  $("ficheDir").textContent = directionTexte(s.cap);
+  let dir = directionTexte(s.cap);
+  if(suitLaMarche()) dir += ", " + directionRelative(s.cap - etat.capMarche);
+  $("ficheDir").textContent = dir;
   $("fichePop").textContent = s.pop ? nf(s.pop) + " habitants" : "non renseignée";
   $("fiche").hidden = false;
 }
@@ -573,7 +747,7 @@ function montrerVue(id){
     initCarte();
     setTimeout(() => etat.carte && etat.carte.invalidateSize(), 60);
   } else {
-    dessinerRadar();
+    dessinerRadar(true);
   }
 }
 
@@ -585,12 +759,13 @@ function demarrerGps(){
   }
   navigator.geolocation.watchPosition(p => {
     etat.gps = { lat: p.coords.latitude, lon: p.coords.longitude, prec: p.coords.accuracy };
+    majCapMarche(p);
     if(etat.mode === "gps") rafraichir(false); else majSource();
   }, err => {
     const raisons = { 1: "l'accès à la localisation est refusé", 2: "la position est introuvable", 3: "le délai est dépassé" };
     if(etat.mode === "gps")
       afficherEtat(`Position indisponible : ${raisons[err.code] || err.message}. Autorisez la localisation, ou placez-vous depuis l'onglet Carte.`, true);
-  }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+  }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
 }
 
 /* ---------- Historique des versions ---------- */
@@ -608,13 +783,28 @@ async function demarrer(){
   const reg = lireJSON(CLE_REGLAGES, {});
   if(reg.nb) etat.nb = reg.nb;
   if(reg.popMin !== undefined) etat.popMin = reg.popMin;
+  if(reg.orientation === "marche") etat.orientation = "marche";
+  if(reg.rendu === "doux") etat.rendu = "doux";
   $("selNombre").value = String(etat.nb);
   $("selPop").value = String(etat.popMin);
   const posSauvee = lireJSON(CLE_POSITION, null);
   if(posSauvee && posSauvee.sim){ etat.sim = posSauvee.sim; etat.mode = posSauvee.mode === "sim" ? "sim" : "gps"; }
 
-  $("selNombre").addEventListener("change", e => { etat.nb = +e.target.value; ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin }); rafraichir(true); });
-  $("selPop").addEventListener("change", e => { etat.popMin = +e.target.value; ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin }); rafraichir(true); });
+  $("selNombre").addEventListener("change", e => { etat.nb = +e.target.value; sauverReglages(); rafraichir(true); });
+  $("selPop").addEventListener("change", e => { etat.popMin = +e.target.value; sauverReglages(); rafraichir(true); });
+
+  // Page Réglages
+  document.querySelectorAll('input[name="orientation"]').forEach(r => {
+    r.checked = r.value === etat.orientation;
+    r.addEventListener("change", () => { etat.orientation = r.value; sauverReglages(); rafraichir(true); });
+  });
+  document.querySelectorAll('input[name="rendu"]').forEach(r => {
+    r.checked = r.value === etat.rendu;
+    r.addEventListener("change", () => { etat.rendu = r.value; sauverReglages(); });
+  });
+  $("btnReglages").addEventListener("click", () => $("dlgReglages").showModal());
+  $("btnFermerReglages").addEventListener("click", () => $("dlgReglages").close());
+
   document.querySelectorAll(".onglets button").forEach(b => b.addEventListener("click", () => montrerVue(b.dataset.vue)));
   $("btnReel").addEventListener("click", revenirReel);
   $("btnVersion").addEventListener("click", () => $("dlgVersion").showModal());
@@ -627,14 +817,25 @@ async function demarrer(){
       rafraichir(true);
     }catch(e){ afficherEtat("Rechargement impossible : " + e.message + ".", true); }
   });
+
+  // Clic sur une sphère (délégation, car le radar est redessiné à chaque image)
+  const trouver = e => {
+    const g = e.target.closest("g[data-k]");
+    if(!g || !etat.affiche) return null;
+    const it = etat.affiche.items.find(i => i.key === g.dataset.k);
+    return it ? it.s : null;
+  };
+  $("radar").addEventListener("click", e => { const s = trouver(e); if(s) ouvrirFiche(s); });
+  $("radar").addEventListener("keydown", e => { if(e.key === "Enter"){ const s = trouver(e); if(s) ouvrirFiche(s); } });
+
   $("ficheFermer").addEventListener("click", fermerFiche);
   $("ficheCarte").addEventListener("click", () => {
     const s = etat.communeFiche; fermerFiche(); montrerVue("vueCarte");
     if(s && etat.carte) etat.carte.setView([s.lat, s.lon], 12);
   });
   $("rech").addEventListener("input", rechercher);
-  window.addEventListener("resize", () => { dessinerRadar(); if(etat.carte) etat.carte.invalidateSize(); });
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { dessinerRadar(); dessinerCarte(); });
+  window.addEventListener("resize", () => { dessinerRadar(true); if(etat.carte) etat.carte.invalidateSize(); });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => dessinerCarte());
 
   majSource();
   demarrerGps();
