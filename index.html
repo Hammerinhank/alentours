@@ -241,7 +241,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.15</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.16</button>
 </header>
 
 <main>
@@ -403,7 +403,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.15";
+const VERSION = "1.16";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -477,6 +477,9 @@ const HISTORIQUE = [
   { v: "1.15", date: "25/09/2026", notes: [
     "Correction : en grande taille, certains lieux ne voyaient jamais leur nom (cercles cachés en permanence sous « Vous y êtes » ou un autre nom).",
     "Chaque nom choisit désormais la position qui masque le moins les cercles en attente, et d'autant moins qu'ils attendent depuis longtemps : chaque lieu a sa chance à tour de rôle."
+  ]},
+  { v: "1.16", date: "25/09/2026", notes: [
+    "Grandes tailles : après le tour de rôle équitable, les noms « au repos » complètent l'affichage partout où il reste de la place : toujours un maximum de noms, sans lieu oublié."
   ]}
 ];
 
@@ -1181,12 +1184,15 @@ function placerEtiquettes(f){
   const occupes = base.slice(), boitesNoms = [], cachees = new Set(), labs = new Map();
   const chevauche = b => occupes.some(o => !(b.x2 < o.x1 || b.x1 > o.x2 || b.y2 < o.y1 || b.y1 > o.y2));
   let posesLibres = 0;
-  for(const it of ordre){
+  // les noms « au repos » sont remis en fin de liste : une fois les lieux en attente servis, ils complètent là où il reste de la place
+  const liste = ordre.slice();
+  for(let n = 0; n < liste.length; n++){
+    const it = liste[n], complement = n >= ordre.length;
     if(s > 1 && etat.masques.has(it.key) && !it.ici) continue;
     const bSphere = { x1: it.x - it.r, y1: it.y - it.r, x2: it.x + it.r, y2: it.y + it.r };
     const force = it.ici || etat.epingles.has(it.key);
     // grandes tailles, équité : un nom affiché récemment laisse passer ceux qui attendent (repos adapté à la capacité)
-    if(s > 1 && !force && reposNoms > 0 && age(it) <= reposNoms){ cachees.add(it.key); continue; }
+    if(s > 1 && !force && !complement && reposNoms > 0 && age(it) <= reposNoms){ cachees.add(it.key); liste.push(it); continue; }
     // grandes tailles : si un nom déjà posé recouvre ce cercle, il attend le tour suivant
     if(s > 1 && !force && boitesNoms.some(b => touche(b, bSphere))){ cachees.add(it.key); continue; }
     const l2 = it.ici ? "Vous y êtes" : formatDistance(it.s.d);
@@ -1249,6 +1255,7 @@ function placerEtiquettes(f){
     occupes.push(choix.b);
     if(s > 1){ boitesNoms.push(choix.b); occupes.push(bSphere); } // le cercle d'une localité nommée devient intouchable
     labs.set(it, { dx: choix.x - it.x, dy: choix.y - it.y, a: choix.a, l1, l2, force });
+    cachees.delete(it.key);
     if(!force) posesLibres++;
   }
   return { labs, cachees, posesLibres };
