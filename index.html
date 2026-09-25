@@ -203,6 +203,12 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 @media (prefers-reduced-motion: reduce){ .fondu{ animation:none; } }
 #ficheNoms{ margin-bottom:10px; }
 #ficheNoms[hidden]{ display:none; }
+
+/* Boussole (v1.9) */
+.fondBoussole{ fill:var(--surface); stroke:var(--anneau); stroke-width:1.5; }
+.pointeNord{ fill:var(--ville); }
+.queueSud{ stroke:var(--doux); stroke-width:2; stroke-linecap:round; }
+.lettreNord{ fill:var(--ville); font-size:15px; font-weight:700; text-anchor:middle; }
 </style>
 </head>
 <body>
@@ -216,7 +222,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.8</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.9</button>
 </header>
 
 <main>
@@ -303,7 +309,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
     </label>
     <label class="choix">
       <input type="radio" name="orientation" value="marche">
-      <span><b>Sens de la marche</b><small>Ce qui est devant vous est en haut. La direction vient du GPS pendant le déplacement ; à l'arrêt, la dernière direction connue est conservée. Le N rouge indique alors le nord.</small></span>
+      <span><b>Sens de la marche</b><small>Ce qui est devant vous est en haut. La direction vient du GPS pendant le déplacement ; à l'arrêt, la dernière direction connue est conservée. La boussole en haut à droite indique alors le nord.</small></span>
     </label>
   </fieldset>
   <fieldset>
@@ -370,7 +376,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.8";
+const VERSION = "1.9";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -415,6 +421,10 @@ const HISTORIQUE = [
   { v: "1.8", date: "24/09/2026", notes: [
     "Grandes tailles : les cercles sans nom affiché sont estompés (ainsi que leur ligne) au lieu d'être entourés de pointillés.",
     "Quand un nom apparaît ou disparaît à l'alternance, son cercle s'allume ou s'estompe en douceur."
+  ]},
+  { v: "1.9", date: "25/09/2026", notes: [
+    "Le « N » flottant au bord du radar est remplacé par une petite boussole fixe dans le coin haut droit.",
+    "La boussole tourne en mode « sens de la marche » ; les noms des localités évitent sa place."
   ]}
 ];
 
@@ -1011,7 +1021,9 @@ function sauverNoms(){
    Grandes tailles : jamais de chevauchement ; les noms sans place attendent leur tour (alternance). */
 function placerEtiquettes(f){
   const s = echelleTexte(), { W, H, cx, cy } = f;
-  const occupes = [{ x1: cx - 14, y1: cy - 14, x2: cx + 14, y2: cy + 14 }];
+  const bo = positionBoussole(W, H);
+  const occupes = [{ x1: cx - 14, y1: cy - 14, x2: cx + 14, y2: cy + 14 },
+                   { x1: bo.x - bo.r - 4, y1: bo.y - bo.r - 4, x2: bo.x + bo.r + 4, y2: bo.y + bo.r + 4 }];
   if(s <= 1) for(const it of f.items) occupes.push({ x1: it.x - it.r, y1: it.y - it.r, x2: it.x + it.r, y2: it.y + it.r });
   const chevauche = b => occupes.some(o => !(b.x2 < o.x1 || b.x1 > o.x2 || b.y2 < o.y1 || b.y1 > o.y2));
   const dedans = b => b.x1 >= 2 && b.x2 <= W - 2 && b.y1 >= 2 && b.y2 <= H - 2;
@@ -1072,6 +1084,18 @@ function tourAlternance(){
   rendre(f, avant);
 }
 
+/* ---------- Boussole (coin haut droit) ---------- */
+function positionBoussole(W, H){ return { x: W - 30, y: 30, r: 22 }; }
+function dessinerBoussole(svg, f){
+  const { x, y, r } = positionBoussole(f.W, f.H);
+  const g = el("g", { class: "boussole" }, svg);
+  el("circle", { cx: x, cy: y, r, class: "fondBoussole" }, g);
+  const aiguille = el("g", { transform: `rotate(${(-f.rot).toFixed(1)} ${x} ${y})` }, g);
+  el("path", { d: `M${x} ${y-19} L${x+5} ${y-13} L${x-5} ${y-13} Z`, class: "pointeNord" }, aiguille);
+  el("line", { x1: x, y1: y + 9, x2: x, y2: y + 17, class: "queueSud" }, aiguille);
+  el("text", { x, y: y + 5, class: "lettreNord" }, aiguille).textContent = "N";
+}
+
 /* ---------- Radar : dessin d'une image ---------- */
 function rendre(f, nomsAvant){
   const svg = $("radar");
@@ -1087,12 +1111,7 @@ function rendre(f, nomsAvant){
     ta.textContent = a.label;
   }
 
-  const aN = -f.rot * Math.PI / 180, rN = R + 26;
-  const xN = Math.min(W - 12, Math.max(12, cx + rN * Math.sin(aN)));
-  const yN = Math.min(H - 6, Math.max(16, cy - rN * Math.cos(aN) + 5));
-  const tN = el("text", { x: xN, y: yN, class: "nord" + (f.fleche ? " tourne" : "") }, svg);
-  if(echelleTexte() > 1) tN.setAttribute("style", `font-size:${(15 * echelleTexte()).toFixed(1)}px`);
-  tN.textContent = "N";
+  dessinerBoussole(svg, f);
 
   // Grandes tailles : un cercle dont le nom n'est pas affiché est estompé (cercle et ligne)
   const grand = echelleTexte() > 1;
