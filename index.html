@@ -241,7 +241,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.14</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.15</button>
 </header>
 
 <main>
@@ -403,7 +403,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.14";
+const VERSION = "1.15";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -473,6 +473,10 @@ const HISTORIQUE = [
   ]},
   { v: "1.14", date: "25/09/2026", notes: [
     "Filtre Habitants : ajout de « 50 000 et + » et « 100 000 et + »."
+  ]},
+  { v: "1.15", date: "25/09/2026", notes: [
+    "Correction : en grande taille, certains lieux ne voyaient jamais leur nom (cercles cachés en permanence sous « Vous y êtes » ou un autre nom).",
+    "Chaque nom choisit désormais la position qui masque le moins les cercles en attente, et d'autant moins qu'ils attendent depuis longtemps : chaque lieu a sa chance à tour de rôle."
   ]}
 ];
 
@@ -1165,14 +1169,24 @@ function placerEtiquettes(f){
     ordre = ordre.map((it, i) => [it, i]).sort((a, b) => rang(a[0]) - rang(b[0]) || a[1] - b[1]).map(x => x[0]);
     etat.tourNoms++;
   }
-  const cachees = new Set();
-  const boitesNoms = [];                       // noms déjà posés (grandes tailles)
+  // âge d'attente de chaque lieu (tours écoulés depuis l'affichage de son nom) : sert à ne pas masquer ceux qui attendent
+  const vuT = etat.vuAuTour, tT = etat.tourNoms;
+  const age = o => vuT.has(o.key) ? tT - vuT.get(o.key) : 1000;
+  const cercle = o => ({ x1: o.x - o.r, y1: o.y - o.r, x2: o.x + o.r, y2: o.y + o.r });
   const touche = (a, b) => !(a.x2 < b.x1 || a.x1 > b.x2 || a.y2 < b.y1 || a.y1 > b.y2);
+  const base = occupes.slice();
+
+  /* Une passe de placement. reposNoms : un nom affiché il y a au plus reposNoms tours laisse passer ceux qui attendent. */
+  const passe = reposNoms => {
+  const occupes = base.slice(), boitesNoms = [], cachees = new Set(), labs = new Map();
+  const chevauche = b => occupes.some(o => !(b.x2 < o.x1 || b.x1 > o.x2 || b.y2 < o.y1 || b.y1 > o.y2));
+  let posesLibres = 0;
   for(const it of ordre){
-    it.lab = null;
     if(s > 1 && etat.masques.has(it.key) && !it.ici) continue;
     const bSphere = { x1: it.x - it.r, y1: it.y - it.r, x2: it.x + it.r, y2: it.y + it.r };
     const force = it.ici || etat.epingles.has(it.key);
+    // grandes tailles, équité : un nom affiché récemment laisse passer ceux qui attendent (repos adapté à la capacité)
+    if(s > 1 && !force && reposNoms > 0 && age(it) <= reposNoms){ cachees.add(it.key); continue; }
     // grandes tailles : si un nom déjà posé recouvre ce cercle, il attend le tour suivant
     if(s > 1 && !force && boitesNoms.some(b => touche(b, bSphere))){ cachees.add(it.key); continue; }
     const l2 = it.ici ? "Vous y êtes" : formatDistance(it.s.d);
@@ -1207,23 +1221,58 @@ function placerEtiquettes(f){
       while(tronque.length > 6 && largeurTexte(tronque, 15 * s, true) > W * 0.46) tronque = tronque.slice(0, -2) + "…";
       const variantes = [...new Set([it.s.nom, abrege, tronque])];
       const larg2 = largeurTexte(l2, 13 * s, false);
-      let derniere = null;
-      for(const v of variantes){
+      // coût d'un emplacement : les cercles qu'il recouvrirait, pondérés par leur temps d'attente
+      const autres = f.items.filter(o => o !== it);
+      const cout = b => { let c = 0; for(const o of autres) if(touche(b, cercle(o))) c += 1 + age(o); return c; };
+      let meilleur = null, derniere = null;
+      variantes.forEach((v, iv) => {
         const cands = boites(Math.max(largeurTexte(v, 15 * s, true), larg2) + 8 * s);
         derniere = { v, cands };
-        choix = cands.find(k => dedans(k.b) && !chevauche(k.b));
-        if(choix){ l1 = v; break; }
+        cands.forEach((k, ik) => {
+          if(!dedans(k.b) || chevauche(k.b)) return;
+          const sc = cout(k.b) + iv * 0.5 + ik * 0.01; // à coût égal : nom le plus complet, puis position préférée
+          if(!meilleur || sc < meilleur.sc) meilleur = { sc, k, v };
+        });
+      });
+      if(meilleur){ choix = meilleur.k; l1 = meilleur.v; }
+      if(!choix && force){
+        // lieu actuel ou épinglé sans place libre : la position la moins gênante, même si elle chevauche
+        let m = null;
+        for(const k of derniere.cands){
+          const sc = cout(k.b) + (dedans(k.b) ? 0 : 1e6) + (chevauche(k.b) ? 1e4 : 0);
+          if(!m || sc < m.sc) m = { sc, k };
+        }
+        l1 = derniere.v; choix = m.k;
       }
-      if(!choix && force){ l1 = derniere.v; choix = derniere.cands.find(k => dedans(k.b)) || derniere.cands[0]; }
     }
     if(!choix){ cachees.add(it.key); continue; }
     occupes.push(choix.b);
     if(s > 1){ boitesNoms.push(choix.b); occupes.push(bSphere); } // le cercle d'une localité nommée devient intouchable
-    it.lab = { dx: choix.x - it.x, dy: choix.y - it.y, a: choix.a, l1, l2 };
-    if(s > 1) etat.vuAuTour.set(it.key, etat.tourNoms);
+    labs.set(it, { dx: choix.x - it.x, dy: choix.y - it.y, a: choix.a, l1, l2, force });
+    if(!force) posesLibres++;
   }
-  f.cachees = cachees;
-  etat.cacheesAvant = cachees;
+  return { labs, cachees, posesLibres };
+  };
+
+  // Équité (grandes tailles) : une passe d'essai mesure combien de noms tiennent dans ce tour (la capacité) ;
+  // si tous les lieux ne peuvent pas passer ensemble, les noms affichés récemment se reposent
+  // pendant (nombre de lieux ÷ capacité − 1) tours, pour que chacun passe à peu près aussi souvent.
+  let res = passe(0);
+  if(s > 1){
+    const libres = f.items.filter(o => !o.ici && !etat.epingles.has(o.key) && !etat.masques.has(o.key)).length;
+    const repos = Math.max(0, Math.ceil(libres / Math.max(1, res.posesLibres)) - 1);
+    if(repos > 0){
+      const r2 = passe(repos);
+      if(r2.posesLibres > 0) res = r2;
+    }
+  }
+  for(const it of f.items){
+    const lab = res.labs.get(it) || null;
+    it.lab = lab;
+    if(s > 1 && lab) etat.vuAuTour.set(it.key, etat.tourNoms);
+  }
+  f.cachees = res.cachees;
+  etat.cacheesAvant = res.cachees;
 }
 
 /* Alternance : toutes les 3 s, les noms en attente passent en priorité */
