@@ -206,6 +206,16 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 
 /* Boussole (v1.9) */
 .fondBoussole{ fill:var(--surface); stroke:var(--anneau); stroke-width:1.5; }
+.boussole{ cursor:pointer; }
+.boussole.marche .fondBoussole{ stroke:var(--moi); stroke-width:3.5; }
+.zoneBoussole{ fill:transparent; }
+.bulle{
+  position:absolute; top:62px; right:12px; z-index:3; max-width:75%;
+  background:var(--encre); color:var(--papier); font-size:16px; font-weight:600;
+  padding:8px 12px; border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.2);
+  opacity:0; transform:translateY(-6px); transition:opacity .25s, transform .25s; pointer-events:none;
+}
+.bulle.visible{ opacity:1; transform:none; }
 .pointeNord{ fill:var(--ville); }
 .queueSud{ stroke:var(--doux); stroke-width:2; stroke-linecap:round; }
 .lettreNord{ fill:var(--ville); font-size:15px; font-weight:700; text-anchor:middle; }
@@ -222,13 +232,14 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.9</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.10</button>
 </header>
 
 <main>
   <section id="vueRadar" class="vue active">
     <div class="zoneRadar">
       <div id="etat" class="etat" hidden></div>
+      <div id="bulle" class="bulle" role="status" aria-live="polite"></div>
       <svg id="radar" role="img" aria-label="Localités proches de votre position"></svg>
     </div>
     <div class="reglages">
@@ -376,7 +387,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.9";
+const VERSION = "1.10";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -425,6 +436,10 @@ const HISTORIQUE = [
   { v: "1.9", date: "25/09/2026", notes: [
     "Le « N » flottant au bord du radar est remplacé par une petite boussole fixe dans le coin haut droit.",
     "La boussole tourne en mode « sens de la marche » ; les noms des localités évitent sa place."
+  ]},
+  { v: "1.10", date: "25/09/2026", notes: [
+    "Toucher la boussole bascule entre « Nord en haut » et « Sens de la marche » (le réglage reste aussi dans la page Réglages).",
+    "Message bref de confirmation ; boussole cerclée de bleu quand le sens de la marche est choisi."
   ]}
 ];
 
@@ -1088,12 +1103,42 @@ function tourAlternance(){
 function positionBoussole(W, H){ return { x: W - 30, y: 30, r: 22 }; }
 function dessinerBoussole(svg, f){
   const { x, y, r } = positionBoussole(f.W, f.H);
-  const g = el("g", { class: "boussole" }, svg);
+  const g = el("g", { class: "boussole" + (etat.orientation === "marche" ? " marche" : ""), role: "button", tabindex: "0",
+                      "aria-label": etat.orientation === "marche" ? "Passer en nord en haut" : "Passer en sens de la marche" }, svg);
+  el("circle", { cx: x, cy: y, r: r + 8, class: "zoneBoussole" }, g); // zone de toucher élargie
   el("circle", { cx: x, cy: y, r, class: "fondBoussole" }, g);
   const aiguille = el("g", { transform: `rotate(${(-f.rot).toFixed(1)} ${x} ${y})` }, g);
   el("path", { d: `M${x} ${y-19} L${x+5} ${y-13} L${x-5} ${y-13} Z`, class: "pointeNord" }, aiguille);
   el("line", { x1: x, y1: y + 9, x2: x, y2: y + 17, class: "queueSud" }, aiguille);
   el("text", { x, y: y + 5, class: "lettreNord" }, aiguille).textContent = "N";
+}
+
+let minuterieBulle = null;
+function montrerBulle(txt){
+  const b = $("bulle");
+  b.textContent = txt;
+  b.classList.add("visible");
+  clearTimeout(minuterieBulle);
+  minuterieBulle = setTimeout(() => b.classList.remove("visible"), 2200);
+}
+function choisirOrientation(o){
+  etat.orientation = o;
+  sauverReglages();
+  document.querySelectorAll('input[name="orientation"]').forEach(r => { r.checked = r.value === o; });
+  rafraichir(true);
+}
+function basculerOrientation(){
+  if(etat.orientation === "marche"){
+    choisirOrientation("nord");
+    montrerBulle("Nord en haut");
+  } else {
+    choisirOrientation("marche");
+    montrerBulle(etat.mode === "sim" ? "Sens de la marche : actif seulement sur votre position réelle"
+               : etat.capMarche === null ? "Sens de la marche : en attente d'un déplacement"
+               : "Sens de la marche");
+  }
+  // redessin immédiat pour que l'aspect de la boussole suive même sans nouvelle position
+  if(etat.affiche && !etat.anim) rendre(etat.affiche);
 }
 
 /* ---------- Radar : dessin d'une image ---------- */
@@ -1422,7 +1467,7 @@ function demarrer(){
   });
   document.querySelectorAll('input[name="orientation"]').forEach(r => {
     r.checked = r.value === etat.orientation;
-    r.addEventListener("change", () => { etat.orientation = r.value; sauverReglages(); rafraichir(true); });
+    r.addEventListener("change", () => choisirOrientation(r.value));
   });
   document.querySelectorAll('input[name="rendu"]').forEach(r => {
     r.checked = r.value === etat.rendu;
@@ -1465,8 +1510,15 @@ function demarrer(){
     const it = etat.affiche.items.find(i => i.key === g.dataset.k);
     return it ? it.s : null;
   };
-  $("radar").addEventListener("click", e => { const s = trouver(e); if(s) ouvrirFiche(s); });
-  $("radar").addEventListener("keydown", e => { if(e.key === "Enter"){ const s = trouver(e); if(s) ouvrirFiche(s); } });
+  $("radar").addEventListener("click", e => {
+    if(e.target.closest(".boussole")){ basculerOrientation(); return; }
+    const s = trouver(e); if(s) ouvrirFiche(s);
+  });
+  $("radar").addEventListener("keydown", e => {
+    if(e.key !== "Enter") return;
+    if(e.target.closest(".boussole")){ basculerOrientation(); return; }
+    const s = trouver(e); if(s) ouvrirFiche(s);
+  });
 
   $("ficheFermer").addEventListener("click", fermerFiche);
   document.querySelectorAll('input[name="taille"]').forEach(r => {
