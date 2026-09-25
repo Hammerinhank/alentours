@@ -115,7 +115,7 @@ main{ flex:1; min-height:0; position:relative; }
 .aide{ margin:0; padding:6px 16px 8px; font-size:15px; color:var(--doux); }
 .leaflet-tooltip.etq{
   background:transparent; border:0; box-shadow:none; padding:0;
-  font-family:var(--police); font-weight:700; font-size:14px; color:#1F2B25;
+  font-family:var(--police); font-weight:700; font-size:calc(14px * var(--echelle, 1)); color:#1F2B25;
   text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
 }
 .leaflet-tooltip.etq::before{ display:none; }
@@ -191,6 +191,14 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 .barrePays{ height:50px; border:2px solid var(--moi); border-radius:8px; color:var(--moi); font-weight:600; margin:4px 0 8px; }
 .barrePays[hidden]{ display:none; }
 .etatDonnees.erreur{ color:var(--ville); font-weight:600; }
+
+/* Taille des noms (v1.7) */
+.attente{ fill:none; stroke:var(--moi); stroke-width:2; stroke-dasharray:3 4; }
+.fondu{ animation:fondu .5s ease; }
+@keyframes fondu{ from{ opacity:0; } to{ opacity:1; } }
+@media (prefers-reduced-motion: reduce){ .fondu{ animation:none; } }
+#ficheNoms{ margin-bottom:10px; }
+#ficheNoms[hidden]{ display:none; }
 </style>
 </head>
 <body>
@@ -204,7 +212,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.6</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.7</button>
 </header>
 
 <main>
@@ -225,7 +233,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
           <option value="0">toutes</option><option value="200">200 et +</option>
           <option value="1000">1 000 et +</option><option value="5000">5 000 et +</option>
           <option value="20000">20 000 et +</option><option value="200000">200 000 et +</option>
-          <option value="500000">500 000 et +</option><option value="1000000">1 000 000 et +</option>
+          <option value="500000">500 000 et +</option>
         </select>
       </label>
       <div class="legende">
@@ -261,6 +269,10 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
     <dt>Direction</dt><dd id="ficheDir"></dd>
     <dt>Population</dt><dd id="fichePop"></dd>
   </dl>
+  <div id="ficheNoms" class="ligneBoutons" hidden>
+    <button class="btnSecondaire" id="btnEpingler"></button>
+    <button class="btnSecondaire" id="btnMasquer"></button>
+  </div>
   <button class="btnSecondaire" id="ficheCarte">Voir sur la carte</button>
 </div>
 
@@ -289,6 +301,27 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
       <input type="radio" name="orientation" value="marche">
       <span><b>Sens de la marche</b><small>Ce qui est devant vous est en haut. La direction vient du GPS pendant le déplacement ; à l'arrêt, la dernière direction connue est conservée. Le N rouge indique alors le nord.</small></span>
     </label>
+  </fieldset>
+  <fieldset>
+    <legend>Taille des noms sur le radar</legend>
+    <label class="choix">
+      <input type="radio" name="taille" value="normale">
+      <span><b>Normale</b><small>Fonctionnement d'origine.</small></span>
+    </label>
+    <label class="choix">
+      <input type="radio" name="taille" value="grande">
+      <span><b style="font-size:21px">Grande</b></span>
+    </label>
+    <label class="choix">
+      <input type="radio" name="taille" value="tresgrande">
+      <span><b style="font-size:26px">Très grande</b></span>
+    </label>
+    <label class="choix">
+      <input type="radio" name="taille" value="enorme">
+      <span><b style="font-size:32px">Énorme</b></span>
+    </label>
+    <p class="etatDonnees">Au-delà de la taille normale, deux noms ne se chevauchent jamais (un nom peut en revanche passer sur un cercle, il reste lisible grâce à son contour) : ceux qui manquent de place s'affichent à tour de rôle toutes les 3 secondes, et leur cercle est entouré de pointillés en attendant. Les noms longs sont abrégés (St-, Ste-, s/). Depuis la fiche d'une localité, on peut épingler son nom (toujours affiché) ou le masquer.</p>
+    <button class="btnSecondaire" id="btnReafficherNoms">Réafficher tous les noms (<span id="nbInterventions">0</span> épinglé ou masqué)</button>
   </fieldset>
   <fieldset>
     <legend>Mise à jour de l'affichage</legend>
@@ -333,7 +366,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.6";
+const VERSION = "1.7";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -368,6 +401,12 @@ const HISTORIQUE = [
   { v: "1.6", date: "24/09/2026", notes: [
     "Correction : avec un grand seuil de population, le radar se vidait à tort quand la grande ville la plus proche était à plus de 100 km.",
     "L'éloignement du pays choisi se mesure désormais sur toutes les localités, sans tenir compte du filtre."
+  ]},
+  { v: "1.7", date: "24/09/2026", notes: [
+    "Filtre Habitants : « 1 000 000 et + » supprimé.",
+    "Réglage de la taille des noms (normale, grande, très grande, énorme) ; en taille normale, rien ne change.",
+    "Grandes tailles : aucun nom ne se chevauche ; ceux qui manquent de place s'affichent à tour de rôle toutes les 3 s (cercle pointillé en attente).",
+    "Grandes tailles : noms abrégés (St-, Ste-, s/) et tronqués si trop longs ; épingler ou masquer un nom depuis sa fiche."
   ]}
 ];
 
@@ -375,6 +414,9 @@ const CLE_REGLAGES = "alentours_reglages";
 const CLE_POSITION = "alentours_position";
 const CLE_DEPOT = "alentours_depot";
 const CLE_TAILLES = "alentours_tailles";
+const CLE_NOMS = "alentours_noms";
+const ECHELLES = { normale: 1, grande: 1.35, tresgrande: 1.7, enorme: 2.1 };
+const DELAI_ALTERNANCE = 3000;
 const ANCIEN_CACHE = "alentours_communes_v1";
 const URL_COMMUNES = "https://geo.api.gouv.fr/communes?fields=nom,centre,population,codeDepartement&format=json&geometry=centre";
 const SERVEURS_OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
@@ -400,6 +442,7 @@ const etat = {
   orientation: "nord", rendu: "instantane",
   capMarche: null, pointCap: null,
   enCours: null, erreurs: { fr: null, vn: null },
+  taille: "normale", epingles: new Set(), masques: new Set(), cacheesAvant: new Set(),
   selection: [], loin: null, dernierCalcul: null, derniereRot: null,
   affiche: null, anim: null,
   carte: null, couche: null, communeFiche: null,
@@ -410,7 +453,7 @@ const etat = {
 function lireJSON(cle, def){ try{ const v = localStorage.getItem(cle); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
 function ecrireJSON(cle, v){ try{ localStorage.setItem(cle, JSON.stringify(v)); return true; }catch(e){ return false; } }
 function sauverReglages(){
-  ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin, orientation: etat.orientation, rendu: etat.rendu, pays: etat.pays });
+  ecrireJSON(CLE_REGLAGES, { nb: etat.nb, popMin: etat.popMin, orientation: etat.orientation, rendu: etat.rendu, pays: etat.pays, taille: etat.taille });
 }
 function sauverPosition(){ ecrireJSON(CLE_POSITION, { mode: etat.mode, sims: etat.sims }); }
 
@@ -888,7 +931,8 @@ function paliersAnneaux(dmax){
 function calculerDisposition(W, H){
   const pos = positionCourante(), sel = etat.selection;
   if(!pos || !sel.length) return null;
-  const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 48;
+  const s = echelleTexte();
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - (s > 1 ? 48 + 24 * (s - 1) : 48);
   const rot = rotationRadar();
   const dmax = Math.max(...sel.map(s => s.d)) * 1.05 || 1;
   const echelle = d => R * Math.sqrt(d / dmax);
@@ -925,36 +969,103 @@ function calculerDisposition(W, H){
     if(!bouge) break;
   }
 
+  const f = {
+    W, H, cx, cy, R, rot, fleche: suitLaMarche(), anneaux,
+    items: pts.map(p => ({ key: cleLieu(p.s), s: p.s, x: p.x, y: p.y, r: p.r,
+                           cls: classeTaille(p.s.taille), lab: null, op: 1 }))
+  };
+  placerEtiquettes(f);
+  return f;
+}
+
+/* ---------- Taille des noms ---------- */
+function echelleTexte(){ return ECHELLES[etat.taille] || 1; }
+function cleLieu(s){ return s.nom + "|" + s.lat + "|" + s.lon; }
+function nomAffiche(nom, s){
+  if(s <= 1) return nom;
+  return nom.replace(/(^|[\s-])Sainte-/g, "$1Ste-").replace(/(^|[\s-])Saint-/g, "$1St-")
+            .replace(/-sur-/g, "-s/-").replace(/-sous-/g, "-s/s-");
+}
+/* Largeur réelle d'un texte dans la police de l'app (grandes tailles) */
+let ctxMesure = null;
+function largeurTexte(txt, px, gras){
+  if(!ctxMesure) ctxMesure = document.createElement("canvas").getContext("2d");
+  ctxMesure.font = `${gras ? 700 : 400} ${px}px ${getComputedStyle(document.body).fontFamily}`;
+  return ctxMesure.measureText(txt).width;
+}
+function sauverNoms(){
+  ecrireJSON(CLE_NOMS, { epingles: [...etat.epingles], masques: [...etat.masques] });
+  $("nbInterventions").textContent = etat.epingles.size + etat.masques.size;
+}
+
+/* Place les noms autour des sphères.
+   Taille normale : comportement d'origine (un nom sans place libre se pose quand même).
+   Grandes tailles : jamais de chevauchement ; les noms sans place attendent leur tour (alternance). */
+function placerEtiquettes(f){
+  const s = echelleTexte(), { W, H, cx, cy } = f;
   const occupes = [{ x1: cx - 14, y1: cy - 14, x2: cx + 14, y2: cy + 14 }];
-  for(const p of pts) occupes.push({ x1: p.x - p.r, y1: p.y - p.r, x2: p.x + p.r, y2: p.y + p.r });
+  if(s <= 1) for(const it of f.items) occupes.push({ x1: it.x - it.r, y1: it.y - it.r, x2: it.x + it.r, y2: it.y + it.r });
   const chevauche = b => occupes.some(o => !(b.x2 < o.x1 || b.x1 > o.x2 || b.y2 < o.y1 || b.y1 > o.y2));
   const dedans = b => b.x1 >= 2 && b.x2 <= W - 2 && b.y1 >= 2 && b.y2 <= H - 2;
-  for(const p of pts){
-    const l1 = p.s.nom, l2 = formatDistance(p.s.d);
-    const w = Math.max(l1.length * 7.6, l2.length * 6.8) + 4;
-    const cands = [
-      { x: p.x, y: p.y + p.r + 15, a: "middle" },
-      { x: p.x, y: p.y - p.r - 20, a: "middle" },
-      { x: p.x + p.r + 5, y: p.y - 2, a: "start" },
-      { x: p.x - p.r - 5, y: p.y - 2, a: "end" }
-    ].map(c => {
-      const x1 = c.a === "middle" ? c.x - w/2 : c.a === "start" ? c.x : c.x - w;
-      return { ...c, b: { x1, y1: c.y - 13, x2: x1 + w, y2: c.y + 17 } };
-    });
-    const choix = cands.find(c => dedans(c.b) && !chevauche(c.b)) || cands.find(c => dedans(c.b)) || cands[0];
-    occupes.push(choix.b);
-    p.lab = { dx: choix.x - p.x, dy: choix.y - p.y, a: choix.a, l1, l2 };
-  }
 
-  return {
-    W, H, cx, cy, R, rot, fleche: suitLaMarche(), anneaux,
-    items: pts.map(p => ({ key: p.s.nom + "|" + p.s.lat + "|" + p.s.lon, s: p.s, x: p.x, y: p.y, r: p.r,
-                           cls: classeTaille(p.s.taille), lab: p.lab, op: 1 }))
-  };
+  let ordre = f.items.slice(); // du plus proche au plus lointain
+  if(s > 1){
+    // épinglés d'abord, puis ceux qui attendaient au tour précédent, puis les autres
+    const rang = it => etat.epingles.has(it.key) ? 0 : etat.cacheesAvant.has(it.key) ? 1 : 2;
+    ordre = ordre.map((it, i) => [it, i]).sort((a, b) => rang(a[0]) - rang(b[0]) || a[1] - b[1]).map(x => x[0]);
+  }
+  const cachees = new Set();
+  for(const it of ordre){
+    it.lab = null;
+    if(s > 1 && etat.masques.has(it.key)) continue;
+    let l1 = nomAffiche(it.s.nom, s);
+    const l2 = formatDistance(it.s.d);
+    let w;
+    if(s > 1){
+      while(l1.length > 6 && largeurTexte(l1, 15 * s, true) > W * 0.46) l1 = l1.slice(0, -2) + "…";
+      w = Math.max(largeurTexte(l1, 15 * s, true), largeurTexte(l2, 13 * s, false)) + 8 * s;
+    } else {
+      w = Math.max(l1.length * 7.6, l2.length * 6.8) + 4;
+    }
+    const c = [
+      { x: it.x, y: it.y + it.r + 15 * s, a: "middle" },
+      { x: it.x, y: it.y - it.r - 20 * s, a: "middle" },
+      { x: it.x + it.r + 5, y: it.y - 2 * s, a: "start" },
+      { x: it.x - it.r - 5, y: it.y - 2 * s, a: "end" }
+    ];
+    if(s > 1){
+      const d = it.r * 0.7;
+      c.push({ x: it.x + d + 3, y: it.y + d + 13 * s, a: "start" }, { x: it.x - d - 3, y: it.y + d + 13 * s, a: "end" },
+             { x: it.x + d + 3, y: it.y - d - 18 * s, a: "start" }, { x: it.x - d - 3, y: it.y - d - 18 * s, a: "end" },
+             { x: it.x, y: it.y + it.r + 30 * s, a: "middle" }, { x: it.x, y: it.y - it.r - 35 * s, a: "middle" });
+    }
+    const cands = c.map(k => {
+      const x1 = k.a === "middle" ? k.x - w/2 : k.a === "start" ? k.x : k.x - w;
+      return { ...k, b: s > 1 ? { x1, y1: k.y - 15 * s, x2: x1 + w, y2: k.y + 21 * s }
+                              : { x1, y1: k.y - 13, x2: x1 + w, y2: k.y + 17 } };
+    });
+    let choix = cands.find(k => dedans(k.b) && !chevauche(k.b));
+    if(!choix && (s <= 1 || etat.epingles.has(it.key))) choix = cands.find(k => dedans(k.b)) || cands[0];
+    if(!choix){ cachees.add(it.key); continue; }
+    occupes.push(choix.b);
+    it.lab = { dx: choix.x - it.x, dy: choix.y - it.y, a: choix.a, l1, l2 };
+  }
+  f.cachees = cachees;
+  etat.cacheesAvant = cachees;
+}
+
+/* Alternance : toutes les 3 s, les noms en attente passent en priorité */
+function tourAlternance(){
+  const f = etat.affiche;
+  if(echelleTexte() <= 1 || etat.anim || !f || !f.cachees || !f.cachees.size) return;
+  if(document.hidden || !$("vueRadar").classList.contains("active")) return;
+  const avant = new Set(f.items.filter(i => i.lab).map(i => i.key));
+  placerEtiquettes(f);
+  rendre(f, avant);
 }
 
 /* ---------- Radar : dessin d'une image ---------- */
-function rendre(f){
+function rendre(f, nomsAvant){
   const svg = $("radar");
   svg.innerHTML = "";
   if(!f) return;
@@ -964,28 +1075,47 @@ function rendre(f){
     if(a.op < 0.02) continue;
     const g = el("g", { opacity: a.op.toFixed(3) }, svg);
     el("circle", { cx, cy, r: a.r, class: "anneau" }, g);
-    el("text", { x: cx + 4, y: cy - a.r - 4, class: "etqAnneau" }, g).textContent = a.label;
+    const ta = el("text", { x: cx + 4, y: cy - a.r - 4, class: "etqAnneau" }, g);
+    ta.textContent = a.label;
   }
 
   const aN = -f.rot * Math.PI / 180, rN = R + 26;
   const xN = Math.min(W - 12, Math.max(12, cx + rN * Math.sin(aN)));
   const yN = Math.min(H - 6, Math.max(16, cy - rN * Math.cos(aN) + 5));
-  el("text", { x: xN, y: yN, class: "nord" + (f.fleche ? " tourne" : "") }, svg).textContent = "N";
+  const tN = el("text", { x: xN, y: yN, class: "nord" + (f.fleche ? " tourne" : "") }, svg);
+  if(echelleTexte() > 1) tN.setAttribute("style", `font-size:${(15 * echelleTexte()).toFixed(1)}px`);
+  tN.textContent = "N";
 
   for(const it of f.items){
     if(it.op < 0.02) continue;
     el("line", { x1: cx, y1: cy, x2: it.x, y2: it.y, class: "ligne", opacity: (0.75 * it.op).toFixed(3) }, svg);
   }
+  const coucheNoms = echelleTexte() > 1 ? document.createElementNS(NS, "g") : null;
   for(const it of f.items){
     if(it.op < 0.02) continue;
     const g = el("g", { class: "groupe", "data-k": it.key, opacity: it.op.toFixed(3), tabindex: "0", role: "button", "aria-label": it.s.nom }, svg);
     el("circle", { cx: it.x, cy: it.y, r: it.r, class: "sphere " + it.cls }, g);
+    if(!it.lab){
+      if(f.cachees && f.cachees.has(it.key)) el("circle", { cx: it.x, cy: it.y, r: it.r + 5, class: "attente" }, g);
+      continue;
+    }
+    const s = echelleTexte();
     const x = it.x + it.lab.dx, y = it.y + it.lab.dy;
-    const t = el("text", { x, y, "text-anchor": it.lab.a }, g);
-    el("tspan", { x, class: "nom" }, t).textContent = it.lab.l1;
-    el("tspan", { x, dy: 16, class: "dist" }, t).textContent = it.lab.l2;
+    // grandes tailles : les noms vont sur une couche au-dessus de tous les cercles
+    const parent = coucheNoms ? el("g", { class: "groupe", "data-k": it.key, opacity: it.op.toFixed(3) }, coucheNoms) : g;
+    const t = el("text", { x, y, "text-anchor": it.lab.a }, parent);
+    if(nomsAvant && !nomsAvant.has(it.key)) t.setAttribute("class", "fondu");
+    const t1 = el("tspan", { x, class: "nom" }, t);
+    const t2 = el("tspan", { x, dy: s > 1 ? (16 * s).toFixed(1) : 16, class: "dist" }, t);
+    if(s > 1){
+      t1.setAttribute("style", `font-size:${(15 * s).toFixed(1)}px;stroke-width:${(4 * s).toFixed(1)}px`);
+      t2.setAttribute("style", `font-size:${(13 * s).toFixed(1)}px;stroke-width:${(4 * s).toFixed(1)}px`);
+    }
+    t1.textContent = it.lab.l1;
+    t2.textContent = it.lab.l2;
   }
 
+  if(coucheNoms) svg.appendChild(coucheNoms);
   el("circle", { cx, cy, r: 8, class: "pouls" }, svg);
   if(f.fleche){
     el("path", { d: `M${cx} ${cy-13} L${cx+9} ${cy+9} L${cx} ${cy+4} L${cx-9} ${cy+9} Z`, class: "moi" }, svg);
@@ -1059,7 +1189,25 @@ function ouvrirFiche(s){
   if(suitLaMarche()) dir += ", " + directionRelative(s.cap - etat.capMarche);
   $("ficheDir").textContent = dir;
   $("fichePop").textContent = s.pop ? nf(s.pop) + " habitants" : "non renseignée";
+  majBoutonsNoms();
   $("fiche").hidden = false;
+}
+function majBoutonsNoms(){
+  const s = etat.communeFiche;
+  $("ficheNoms").hidden = !s || echelleTexte() <= 1;
+  if(!s) return;
+  const k = cleLieu(s);
+  $("btnEpingler").textContent = etat.epingles.has(k) ? "Ne plus épingler le nom" : "📌 Toujours afficher le nom";
+  $("btnMasquer").textContent = etat.masques.has(k) ? "Réafficher le nom" : "Masquer le nom";
+}
+function basculerNom(ensemble, autre){
+  const s = etat.communeFiche;
+  if(!s) return;
+  const k = cleLieu(s);
+  if(ensemble.has(k)) ensemble.delete(k); else { ensemble.add(k); autre.delete(k); }
+  sauverNoms();
+  majBoutonsNoms();
+  if(etat.affiche){ placerEtiquettes(etat.affiche); rendre(etat.affiche); }
 }
 function fermerFiche(){ $("fiche").hidden = true; }
 
@@ -1203,7 +1351,13 @@ function demarrer(){
 
   const reg = lireJSON(CLE_REGLAGES, {});
   if(reg.nb) etat.nb = reg.nb;
-  if(reg.popMin !== undefined) etat.popMin = reg.popMin === 5000000 ? 1000000 : reg.popMin; // seuil retiré en v1.5
+  if(reg.popMin !== undefined) etat.popMin = reg.popMin >= 1000000 ? 500000 : reg.popMin; // seuils retirés en v1.5 et v1.7
+  if(ECHELLES[reg.taille]) etat.taille = reg.taille;
+  document.documentElement.style.setProperty("--echelle", echelleTexte());
+  const noms = lireJSON(CLE_NOMS, {});
+  etat.epingles = new Set(noms.epingles || []);
+  etat.masques = new Set(noms.masques || []);
+  $("nbInterventions").textContent = etat.epingles.size + etat.masques.size;
   if(reg.orientation === "marche") etat.orientation = "marche";
   if(reg.rendu === "doux") etat.rendu = "doux";
   if(reg.pays === "vn") etat.pays = "vn";
@@ -1281,6 +1435,23 @@ function demarrer(){
   $("radar").addEventListener("keydown", e => { if(e.key === "Enter"){ const s = trouver(e); if(s) ouvrirFiche(s); } });
 
   $("ficheFermer").addEventListener("click", fermerFiche);
+  document.querySelectorAll('input[name="taille"]').forEach(r => {
+    r.checked = r.value === etat.taille;
+    r.addEventListener("change", () => {
+      etat.taille = r.value; sauverReglages();
+      document.documentElement.style.setProperty("--echelle", echelleTexte());
+      etat.cacheesAvant = new Set();
+      dessinerRadar(true);
+      dessinerCarte();
+    });
+  });
+  $("btnReafficherNoms").addEventListener("click", () => {
+    etat.epingles.clear(); etat.masques.clear(); sauverNoms(); dessinerRadar(true);
+  });
+  $("btnEpingler").addEventListener("click", () => basculerNom(etat.epingles, etat.masques));
+  $("btnMasquer").addEventListener("click", () => basculerNom(etat.masques, etat.epingles));
+  setInterval(tourAlternance, DELAI_ALTERNANCE);
+
   $("ficheCarte").addEventListener("click", () => {
     const s = etat.communeFiche; fermerFiche(); montrerVue("vueCarte");
     if(s && etat.carte) etat.carte.setView([s.lat, s.lon], 12);
