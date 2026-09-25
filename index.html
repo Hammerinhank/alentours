@@ -193,7 +193,11 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 .etatDonnees.erreur{ color:var(--ville); font-weight:600; }
 
 /* Taille des noms (v1.7) */
-.attente{ fill:none; stroke:var(--moi); stroke-width:2; stroke-dasharray:3 4; }
+.allume{ animation:allume .6s ease; }
+@keyframes allume{ from{ opacity:.25; } }
+.eteint{ animation:eteint .6s ease; }
+@keyframes eteint{ from{ opacity:1; } }
+@media (prefers-reduced-motion: reduce){ .allume, .eteint{ animation:none; } }
 .fondu{ animation:fondu .5s ease; }
 @keyframes fondu{ from{ opacity:0; } to{ opacity:1; } }
 @media (prefers-reduced-motion: reduce){ .fondu{ animation:none; } }
@@ -212,7 +216,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.7</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.8</button>
 </header>
 
 <main>
@@ -320,7 +324,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
       <input type="radio" name="taille" value="enorme">
       <span><b style="font-size:32px">Énorme</b></span>
     </label>
-    <p class="etatDonnees">Au-delà de la taille normale, deux noms ne se chevauchent jamais (un nom peut en revanche passer sur un cercle, il reste lisible grâce à son contour) : ceux qui manquent de place s'affichent à tour de rôle toutes les 3 secondes, et leur cercle est entouré de pointillés en attendant. Les noms longs sont abrégés (St-, Ste-, s/). Depuis la fiche d'une localité, on peut épingler son nom (toujours affiché) ou le masquer.</p>
+    <p class="etatDonnees">Au-delà de la taille normale, deux noms ne se chevauchent jamais (un nom peut en revanche passer sur un cercle, il reste lisible grâce à son contour) : ceux qui manquent de place s'affichent à tour de rôle toutes les 3 secondes ; en attendant, leur cercle est estompé. Les noms longs sont abrégés (St-, Ste-, s/). Depuis la fiche d'une localité, on peut épingler son nom (toujours affiché) ou le masquer.</p>
     <button class="btnSecondaire" id="btnReafficherNoms">Réafficher tous les noms (<span id="nbInterventions">0</span> épinglé ou masqué)</button>
   </fieldset>
   <fieldset>
@@ -366,7 +370,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.7";
+const VERSION = "1.8";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -407,6 +411,10 @@ const HISTORIQUE = [
     "Réglage de la taille des noms (normale, grande, très grande, énorme) ; en taille normale, rien ne change.",
     "Grandes tailles : aucun nom ne se chevauche ; ceux qui manquent de place s'affichent à tour de rôle toutes les 3 s (cercle pointillé en attente).",
     "Grandes tailles : noms abrégés (St-, Ste-, s/) et tronqués si trop longs ; épingler ou masquer un nom depuis sa fiche."
+  ]},
+  { v: "1.8", date: "24/09/2026", notes: [
+    "Grandes tailles : les cercles sans nom affiché sont estompés (ainsi que leur ligne) au lieu d'être entourés de pointillés.",
+    "Quand un nom apparaît ou disparaît à l'alternance, son cercle s'allume ou s'estompe en douceur."
   ]}
 ];
 
@@ -1086,19 +1094,26 @@ function rendre(f, nomsAvant){
   if(echelleTexte() > 1) tN.setAttribute("style", `font-size:${(15 * echelleTexte()).toFixed(1)}px`);
   tN.textContent = "N";
 
+  // Grandes tailles : un cercle dont le nom n'est pas affiché est estompé (cercle et ligne)
+  const grand = echelleTexte() > 1;
+  const estompe = it => grand && !it.lab ? 0.25 : 1;
+  const transition = it => {
+    if(!grand || !nomsAvant) return "";
+    const avait = nomsAvant.has(it.key);
+    return it.lab && !avait ? "allume" : !it.lab && avait ? "eteint" : "";
+  };
   for(const it of f.items){
     if(it.op < 0.02) continue;
-    el("line", { x1: cx, y1: cy, x2: it.x, y2: it.y, class: "ligne", opacity: (0.75 * it.op).toFixed(3) }, svg);
+    const l = el("line", { x1: cx, y1: cy, x2: it.x, y2: it.y, class: "ligne", opacity: (0.75 * it.op * (grand && !it.lab ? 0.4 : 1)).toFixed(3) }, svg);
+    const tr = transition(it); if(tr) l.classList.add(tr);
   }
   const coucheNoms = echelleTexte() > 1 ? document.createElementNS(NS, "g") : null;
   for(const it of f.items){
     if(it.op < 0.02) continue;
-    const g = el("g", { class: "groupe", "data-k": it.key, opacity: it.op.toFixed(3), tabindex: "0", role: "button", "aria-label": it.s.nom }, svg);
+    const g = el("g", { class: "groupe", "data-k": it.key, opacity: (it.op * estompe(it)).toFixed(3), tabindex: "0", role: "button", "aria-label": it.s.nom }, svg);
+    const tr = transition(it); if(tr) g.classList.add(tr);
     el("circle", { cx: it.x, cy: it.y, r: it.r, class: "sphere " + it.cls }, g);
-    if(!it.lab){
-      if(f.cachees && f.cachees.has(it.key)) el("circle", { cx: it.x, cy: it.y, r: it.r + 5, class: "attente" }, g);
-      continue;
-    }
+    if(!it.lab) continue;
     const s = echelleTexte();
     const x = it.x + it.lab.dx, y = it.y + it.lab.dy;
     // grandes tailles : les noms vont sur une couche au-dessus de tous les cercles
