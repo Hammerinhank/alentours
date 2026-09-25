@@ -219,6 +219,15 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 .pointeNord{ fill:var(--ville); }
 .queueSud{ stroke:var(--doux); stroke-width:2; stroke-linecap:round; }
 .lettreNord{ fill:var(--ville); font-size:15px; font-weight:700; text-anchor:middle; }
+
+/* Lieu où l'on se trouve (v1.12) */
+.halo{ fill:var(--moi); opacity:.2; transform-box:fill-box; transform-origin:center; animation:halo 2.2s ease-in-out infinite; }
+@keyframes halo{ 0%,100%{ transform:scale(1); opacity:.24; } 50%{ transform:scale(1.28); opacity:.08; } }
+@media (prefers-reduced-motion: reduce){ .halo{ animation:none; } }
+.sphere.ici{ stroke:var(--moi); stroke-width:4; }
+.ligne.ici{ stroke:var(--moi); stroke-width:3; }
+.nom.ici{ fill:var(--moi); }
+.dist.ici{ fill:var(--moi); font-weight:600; }
 </style>
 </head>
 <body>
@@ -232,7 +241,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.10</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.12</button>
 </header>
 
 <main>
@@ -289,6 +298,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
     <dt>Distance</dt><dd id="ficheDist"></dd>
     <dt>Direction</dt><dd id="ficheDir"></dd>
     <dt>Population</dt><dd id="fichePop"></dd>
+    <dt>Étendue estimée</dt><dd id="ficheEtendue"></dd>
   </dl>
   <div id="ficheNoms" class="ligneBoutons" hidden>
     <button class="btnSecondaire" id="btnEpingler"></button>
@@ -322,6 +332,11 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
       <input type="radio" name="orientation" value="marche">
       <span><b>Sens de la marche</b><small>Ce qui est devant vous est en haut. La direction vient du GPS pendant le déplacement ; à l'arrêt, la dernière direction connue est conservée. La boussole en haut à droite indique alors le nord.</small></span>
     </label>
+    <label class="choix">
+      <input type="radio" name="orientation" value="village">
+      <span><b>Dernier village derrière</b><small>Après avoir traversé un village (vous êtes passé dans son étendue, estimée d'après sa population, et vous vous en éloignez), il est placé juste sous votre position, à la verticale ; la boussole est alors un cercle vide. Dès qu'un autre village devient plus proche, le radar reprend le sens de la marche et la boussole réapparaît.</small></span>
+    </label>
+    <p class="etatDonnees">Toucher la boussole passe d'un mode à l'autre : nord en haut, sens de la marche, dernier village derrière.</p>
   </fieldset>
   <fieldset>
     <legend>Taille des noms sur le radar</legend>
@@ -387,7 +402,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.10";
+const VERSION = "1.12";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -440,6 +455,16 @@ const HISTORIQUE = [
   { v: "1.10", date: "25/09/2026", notes: [
     "Toucher la boussole bascule entre « Nord en haut » et « Sens de la marche » (le réglage reste aussi dans la page Réglages).",
     "Message bref de confirmation ; boussole cerclée de bleu quand le sens de la marche est choisi."
+  ]},
+  { v: "1.11", date: "25/09/2026", notes: [
+    "Grandes tailles : un nom n'est plus abrégé ni tronqué s'il tient en entier sans rien chevaucher.",
+    "Troisième orientation « Dernier village derrière » : le dernier village traversé est placé à la verticale sous la position, puis retour au sens de la marche dès qu'un autre village devient plus proche.",
+    "La boussole alterne les trois modes ; cercle vide tant que le dernier village est aligné derrière."
+  ]},
+  { v: "1.12", date: "25/09/2026", notes: [
+    "Étendue estimée de chaque lieu d'après sa population (rayon ≈ 29 m × population^0,425, entre 400 m et 8 km, marge de 30 % comprise).",
+    "Quand on est dans un lieu : halo bleu pulsant, contour et ligne bleus, « Vous y êtes » ; nom rappelé dans l'en-tête et étendue tracée sur la carte.",
+    "Mode « Dernier village derrière » : un village ne compte comme traversé que si l'on est passé dans son étendue ; « plus proche » se mesure au bord du lieu."
   ]}
 ];
 
@@ -476,6 +501,8 @@ const etat = {
   capMarche: null, pointCap: null,
   enCours: null, erreurs: { fr: null, vn: null },
   taille: "normale", epingles: new Set(), masques: new Set(), cacheesAvant: new Set(),
+  suivi: { cle: null, dMin: Infinity, traverse: null },
+  rayons: null, lieuActuel: null, lieuNom: null,
   selection: [], loin: null, dernierCalcul: null, derniereRot: null,
   affiche: null, anim: null,
   carte: null, couche: null, communeFiche: null,
@@ -561,8 +588,65 @@ function rayonSphere(taille){ return 5 + 3.2 * Math.log10(Math.max(taille, 10));
 function classeTaille(taille){ return taille >= 20000 ? "ville" : taille >= 2000 ? "bourg" : "village"; }
 function couleur(nom){ return getComputedStyle(document.documentElement).getPropertyValue("--" + nom).trim(); }
 function positionCourante(){ return etat.mode === "sim" ? etat.sims[etat.pays] : etat.gps; }
-function suitLaMarche(){ return etat.orientation === "marche" && etat.mode === "gps" && etat.capMarche !== null; }
-function rotationRadar(){ return suitLaMarche() ? etat.capMarche : 0; }
+/* Étendue d'un lieu : surface bâtie ≈ a × P^0,85 (loi d'échelle urbaine, exposant 0,75 à 0,95 selon les études),
+   soit un rayon ≈ 22 m × P^0,425, calé sur un village de 500 habitants ≈ 0,3 km² ;
+   majoré de 30 %, au moins 400 m (passer très près compte comme passer dedans), au plus 8 km. */
+const RAYON_K = 0.0221, RAYON_EXP = 0.425, RAYON_MARGE = 1.3, RAYON_MIN = 0.4, RAYON_MAX = 8;
+function rayonLieu(pop){
+  return Math.min(RAYON_MAX, Math.max(RAYON_MIN, RAYON_MARGE * RAYON_K * Math.pow(Math.max(pop, 1), RAYON_EXP)));
+}
+/* Pour une position : le lieu dont on est le plus « au cœur » (s'il y en a un) et le lieu dont le bord est le plus proche */
+function analyserProximite(pos){
+  const C = etat.communes, Rr = etat.rayons;
+  if(!C || !Rr) return { dedans: null, plusProche: null };
+  const { lat, lon } = pos, k = Math.cos(lat * Math.PI / 180);
+  let meilleurRatio = Infinity, iDedans = -1, meilleurBord = Infinity, iBord = -1;
+  for(let i = 0; i < C.length; i++){
+    if(C[i][5] < etat.popMin) continue;
+    const dy = C[i][1] - lat, dx = (C[i][2] - lon) * k;
+    if(Math.abs(dy) > 0.1 && Math.abs(dy) * 111 > Rr[i] + 30) continue; // élimine vite les lieux lointains
+    const d = 111.32 * Math.sqrt(dx*dx + dy*dy);
+    const ratio = d / Rr[i], bord = d - Rr[i];
+    if(ratio < meilleurRatio){ meilleurRatio = ratio; iDedans = i; }
+    if(bord < meilleurBord){ meilleurBord = bord; iBord = i; }
+  }
+  const fiche = i => i < 0 ? null : { i, cle: C[i][0] + "|" + C[i][1] + "|" + C[i][2], nom: C[i][0], lat: C[i][1], lon: C[i][2],
+                                     d: distanceKm(lat, lon, C[i][1], C[i][2]), rayon: Rr[i] };
+  return { dedans: meilleurRatio <= 1 ? fiche(iDedans) : null, plusProche: fiche(iBord) };
+}
+
+/* Le village traversé est-il actuellement aligné derrière (mode « village ») ? */
+function villageDerriere(){ return etat.orientation === "village" && etat.mode === "gps" && !!etat.gps && !!etat.suivi.traverse; }
+/* Radar orienté selon la marche (mode « marche », ou mode « village » hors alignement) */
+function suitLaMarche(){
+  return (etat.orientation === "marche" || etat.orientation === "village") && etat.mode === "gps" &&
+         etat.capMarche !== null && !villageDerriere();
+}
+function rotationRadar(){
+  if(villageDerriere()){
+    const t = etat.suivi.traverse;
+    return (cap(etat.gps.lat, etat.gps.lon, t.lat, t.lon) + 180) % 360; // le village passe en bas, à la verticale
+  }
+  return suitLaMarche() ? etat.capMarche : 0;
+}
+/* Suivi du village le plus proche (parmi ceux du filtre) pour détecter le dernier village traversé :
+   un village est « traversé » quand, étant le plus proche, on commence à s'en éloigner. */
+function majVillageTraverse(){
+  if(etat.mode !== "gps" || !etat.gps || !etat.communes) return;
+  const { plusProche } = analyserProximite(etat.gps);
+  if(!plusProche) return;
+  const su = etat.suivi, d = plusProche.d, cle = plusProche.cle;
+  const marge = Math.max(0.05, (etat.gps.prec || 0) / 1000); // au moins 50 m, ou la précision GPS
+  if(cle !== su.cle){
+    su.cle = cle; su.dMin = d;
+    if(su.traverse && su.traverse.cle !== cle) su.traverse = null; // un autre lieu est plus proche : retour au sens de la marche
+  } else if(d < su.dMin){
+    su.dMin = d;
+  } else if(d > su.dMin + marge && su.dMin <= plusProche.rayon && (!su.traverse || su.traverse.cle !== cle)){
+    // on est passé dans son étendue et on s'en éloigne : lieu traversé
+    su.traverse = { cle, nom: plusProche.nom, lat: plusProche.lat, lon: plusProche.lon };
+  }
+}
 function dateCourte(iso){ try{ return new Date(iso).toLocaleDateString("fr-FR"); }catch(e){ return "?"; } }
 
 /* ---------- Progression (barre dans le bouton + message du radar) ---------- */
@@ -827,6 +911,7 @@ async function activerDonnees(p, forcerDepot, depuisSource){
     else c = await chargerLieux(p, forcerDepot);
     if(etat.pays !== p) return fin(true);
     etat.communes = c.d;
+    etat.rayons = Float32Array.from(c.d, x => rayonLieu(x[5]));
     etat.noms = c.d.map(x => norm(x[0]));
     etat.dernierCalcul = null;
     majEtatDonnees();
@@ -873,16 +958,32 @@ function rafraichir(force){
   const pos = positionCourante();
   if(!pos || !etat.communes) return;
   const dc = etat.dernierCalcul;
-  const aBouge = force || !dc || dc.nb !== etat.nb || dc.popMin !== etat.popMin ||
+  const prox = analyserProximite(pos);
+  const lieu = prox.dedans ? prox.dedans.cle : null;
+  const lieuChange = lieu !== etat.lieuActuel;
+  etat.lieuActuel = lieu; etat.lieuNom = prox.dedans ? prox.dedans.nom : null;
+  if(lieuChange) majSource();
+  const aBouge = force || lieuChange || !dc || dc.nb !== etat.nb || dc.popMin !== etat.popMin ||
                  distanceKm(dc.lat, dc.lon, pos.lat, pos.lon) >= 0.03;
   const rot = rotationRadar();
-  const aTourne = etat.derniereRot === null || Math.abs(ecartDeg(rot, etat.derniereRot)) >= 10;
+  const derriere = villageDerriere();
+  const aTourne = etat.derniereRot === null || Math.abs(ecartDeg(rot, etat.derniereRot)) >= 10 || derriere !== etat.dernierDerriere;
+  etat.dernierDerriere = derriere;
   if(!aBouge && !aTourne) return;
   if(aBouge){
     etat.dernierCalcul = { lat: pos.lat, lon: pos.lon, nb: etat.nb, popMin: etat.popMin };
     const dPays = distancePlusProche(pos);
     if(dPays > 100){ etat.selection = []; etat.loin = dPays; }
-    else { etat.selection = calculerVoisines(pos); etat.loin = null; }
+    else {
+      etat.selection = calculerVoisines(pos); etat.loin = null;
+      // le lieu où l'on se trouve figure toujours dans la sélection
+      if(prox.dedans && !etat.selection.some(s => cleLieu(s) === lieu)){
+        const c = etat.communes[prox.dedans.i];
+        etat.selection[etat.selection.length ? etat.selection.length - 1 : 0] =
+          { nom: c[0], lat: c[1], lon: c[2], pop: c[3], info: c[4], taille: c[5], d: prox.dedans.d, cap: cap(pos.lat, pos.lon, c[1], c[2]) };
+      }
+      for(const s of etat.selection) s.ici = cleLieu(s) === lieu;
+    }
     dessinerCarte();
   }
   etat.derniereRot = rot;
@@ -894,7 +995,7 @@ function rafraichir(force){
 function majSource(){
   const s = $("source"), dr = PAYS[etat.pays].drapeau + " ";
   if(etat.mode === "sim"){
-    s.textContent = dr + (etat.orientation === "marche" ? "Position simulée, nord en haut" : "Position simulée");
+    s.textContent = dr + (etat.lieuNom ? `À ${etat.lieuNom}, ` : "") + (etat.orientation !== "nord" ? "Position simulée, nord en haut" : "Position simulée");
     s.classList.add("sim");
     $("btnReel").hidden = false;
     return;
@@ -902,8 +1003,9 @@ function majSource(){
   s.classList.remove("sim");
   $("btnReel").hidden = true;
   if(!etat.gps){ s.textContent = dr + "Recherche de votre position…"; return; }
-  let t = `Position réelle à ${Math.round(etat.gps.prec)} m près`;
-  if(etat.orientation === "marche") t += suitLaMarche() ? ", sens de la marche" : ", nord en haut en attendant un déplacement";
+  let t = (etat.lieuNom ? `À ${etat.lieuNom}, ` : "") + `Position réelle à ${Math.round(etat.gps.prec)} m près`;
+  if(villageDerriere()) t += ", " + etat.suivi.traverse.nom + " derrière";
+  else if(etat.orientation !== "nord") t += suitLaMarche() ? ", sens de la marche" : ", nord en haut en attendant un déplacement";
   s.textContent = dr + t;
 }
 
@@ -1003,9 +1105,12 @@ function calculerDisposition(W, H){
   }
 
   const f = {
-    W, H, cx, cy, R, rot, fleche: suitLaMarche(), anneaux,
+    W, H, cx, cy, R, rot, anneaux,
+    fleche: (suitLaMarche() || villageDerriere()) && etat.capMarche !== null,
+    angleFleche: etat.capMarche !== null ? ecartDeg(etat.capMarche, rot) : 0,
+    derriere: villageDerriere(),
     items: pts.map(p => ({ key: cleLieu(p.s), s: p.s, x: p.x, y: p.y, r: p.r,
-                           cls: classeTaille(p.s.taille), lab: null, op: 1 }))
+                           cls: classeTaille(p.s.taille), ici: !!p.s.ici, lab: null, op: 1 }))
   };
   placerEtiquettes(f);
   return f;
@@ -1046,22 +1151,14 @@ function placerEtiquettes(f){
   let ordre = f.items.slice(); // du plus proche au plus lointain
   if(s > 1){
     // épinglés d'abord, puis ceux qui attendaient au tour précédent, puis les autres
-    const rang = it => etat.epingles.has(it.key) ? 0 : etat.cacheesAvant.has(it.key) ? 1 : 2;
+    const rang = it => it.ici || etat.epingles.has(it.key) ? 0 : etat.cacheesAvant.has(it.key) ? 1 : 2;
     ordre = ordre.map((it, i) => [it, i]).sort((a, b) => rang(a[0]) - rang(b[0]) || a[1] - b[1]).map(x => x[0]);
   }
   const cachees = new Set();
   for(const it of ordre){
     it.lab = null;
-    if(s > 1 && etat.masques.has(it.key)) continue;
-    let l1 = nomAffiche(it.s.nom, s);
-    const l2 = formatDistance(it.s.d);
-    let w;
-    if(s > 1){
-      while(l1.length > 6 && largeurTexte(l1, 15 * s, true) > W * 0.46) l1 = l1.slice(0, -2) + "…";
-      w = Math.max(largeurTexte(l1, 15 * s, true), largeurTexte(l2, 13 * s, false)) + 8 * s;
-    } else {
-      w = Math.max(l1.length * 7.6, l2.length * 6.8) + 4;
-    }
+    if(s > 1 && etat.masques.has(it.key) && !it.ici) continue;
+    const l2 = it.ici ? "Vous y êtes" : formatDistance(it.s.d);
     const c = [
       { x: it.x, y: it.y + it.r + 15 * s, a: "middle" },
       { x: it.x, y: it.y - it.r - 20 * s, a: "middle" },
@@ -1074,13 +1171,31 @@ function placerEtiquettes(f){
              { x: it.x + d + 3, y: it.y - d - 18 * s, a: "start" }, { x: it.x - d - 3, y: it.y - d - 18 * s, a: "end" },
              { x: it.x, y: it.y + it.r + 30 * s, a: "middle" }, { x: it.x, y: it.y - it.r - 35 * s, a: "middle" });
     }
-    const cands = c.map(k => {
+    const boites = w => c.map(k => {
       const x1 = k.a === "middle" ? k.x - w/2 : k.a === "start" ? k.x : k.x - w;
       return { ...k, b: s > 1 ? { x1, y1: k.y - 15 * s, x2: x1 + w, y2: k.y + 21 * s }
                               : { x1, y1: k.y - 13, x2: x1 + w, y2: k.y + 17 } };
     });
-    let choix = cands.find(k => dedans(k.b) && !chevauche(k.b));
-    if(!choix && (s <= 1 || etat.epingles.has(it.key))) choix = cands.find(k => dedans(k.b)) || cands[0];
+    let choix = null, l1 = it.s.nom;
+    if(s <= 1){
+      const cands = boites(Math.max(l1.length * 7.6, l2.length * 6.8) + 4);
+      choix = cands.find(k => dedans(k.b) && !chevauche(k.b)) || cands.find(k => dedans(k.b)) || cands[0];
+    } else {
+      // on essaie d'abord le nom entier, puis abrégé (St-, s/…), puis tronqué : la forme la plus complète qui tient sans chevaucher
+      const abrege = nomAffiche(it.s.nom, s);
+      let tronque = abrege;
+      while(tronque.length > 6 && largeurTexte(tronque, 15 * s, true) > W * 0.46) tronque = tronque.slice(0, -2) + "…";
+      const variantes = [...new Set([it.s.nom, abrege, tronque])];
+      const larg2 = largeurTexte(l2, 13 * s, false);
+      let derniere = null;
+      for(const v of variantes){
+        const cands = boites(Math.max(largeurTexte(v, 15 * s, true), larg2) + 8 * s);
+        derniere = { v, cands };
+        choix = cands.find(k => dedans(k.b) && !chevauche(k.b));
+        if(choix){ l1 = v; break; }
+      }
+      if(!choix && (it.ici || etat.epingles.has(it.key))){ l1 = derniere.v; choix = derniere.cands.find(k => dedans(k.b)) || derniere.cands[0]; }
+    }
     if(!choix){ cachees.add(it.key); continue; }
     occupes.push(choix.b);
     it.lab = { dx: choix.x - it.x, dy: choix.y - it.y, a: choix.a, l1, l2 };
@@ -1103,10 +1218,12 @@ function tourAlternance(){
 function positionBoussole(W, H){ return { x: W - 30, y: 30, r: 22 }; }
 function dessinerBoussole(svg, f){
   const { x, y, r } = positionBoussole(f.W, f.H);
-  const g = el("g", { class: "boussole" + (etat.orientation === "marche" ? " marche" : ""), role: "button", tabindex: "0",
-                      "aria-label": etat.orientation === "marche" ? "Passer en nord en haut" : "Passer en sens de la marche" }, svg);
+  const suivant = { nord: "sens de la marche", marche: "dernier village derrière", village: "nord en haut" }[etat.orientation];
+  const g = el("g", { class: "boussole" + (etat.orientation !== "nord" ? " marche" : ""), role: "button", tabindex: "0",
+                      "aria-label": "Passer en " + suivant }, svg);
   el("circle", { cx: x, cy: y, r: r + 8, class: "zoneBoussole" }, g); // zone de toucher élargie
   el("circle", { cx: x, cy: y, r, class: "fondBoussole" }, g);
+  if(f.derriere) return; // dernier village aligné derrière : cercle vide
   const aiguille = el("g", { transform: `rotate(${(-f.rot).toFixed(1)} ${x} ${y})` }, g);
   el("path", { d: `M${x} ${y-19} L${x+5} ${y-13} L${x-5} ${y-13} Z`, class: "pointeNord" }, aiguille);
   el("line", { x1: x, y1: y + 9, x2: x, y2: y + 17, class: "queueSud" }, aiguille);
@@ -1128,14 +1245,20 @@ function choisirOrientation(o){
   rafraichir(true);
 }
 function basculerOrientation(){
-  if(etat.orientation === "marche"){
-    choisirOrientation("nord");
-    montrerBulle("Nord en haut");
-  } else {
+  if(etat.orientation === "nord"){
     choisirOrientation("marche");
     montrerBulle(etat.mode === "sim" ? "Sens de la marche : actif seulement sur votre position réelle"
                : etat.capMarche === null ? "Sens de la marche : en attente d'un déplacement"
                : "Sens de la marche");
+  } else if(etat.orientation === "marche"){
+    majVillageTraverse();
+    choisirOrientation("village");
+    montrerBulle(etat.mode === "sim" ? "Dernier village derrière : actif seulement sur votre position réelle"
+               : villageDerriere() ? `Dernier village derrière : ${etat.suivi.traverse.nom}`
+               : "Dernier village derrière : en attente d'un village traversé (sens de la marche en attendant)");
+  } else {
+    choisirOrientation("nord");
+    montrerBulle("Nord en haut");
   }
   // redessin immédiat pour que l'aspect de la boussole suive même sans nouvelle position
   if(etat.affiche && !etat.anim) rendre(etat.affiche);
@@ -1168,7 +1291,8 @@ function rendre(f, nomsAvant){
   };
   for(const it of f.items){
     if(it.op < 0.02) continue;
-    const l = el("line", { x1: cx, y1: cy, x2: it.x, y2: it.y, class: "ligne", opacity: (0.75 * it.op * (grand && !it.lab ? 0.4 : 1)).toFixed(3) }, svg);
+    const l = el("line", { x1: cx, y1: cy, x2: it.x, y2: it.y, class: "ligne" + (it.ici ? " ici" : ""),
+                           opacity: (it.ici ? it.op : 0.75 * it.op * (grand && !it.lab ? 0.4 : 1)).toFixed(3) }, svg);
     const tr = transition(it); if(tr) l.classList.add(tr);
   }
   const coucheNoms = echelleTexte() > 1 ? document.createElementNS(NS, "g") : null;
@@ -1176,7 +1300,8 @@ function rendre(f, nomsAvant){
     if(it.op < 0.02) continue;
     const g = el("g", { class: "groupe", "data-k": it.key, opacity: (it.op * estompe(it)).toFixed(3), tabindex: "0", role: "button", "aria-label": it.s.nom }, svg);
     const tr = transition(it); if(tr) g.classList.add(tr);
-    el("circle", { cx: it.x, cy: it.y, r: it.r, class: "sphere " + it.cls }, g);
+    if(it.ici) el("circle", { cx: it.x, cy: it.y, r: it.r + 12, class: "halo" }, g);
+    el("circle", { cx: it.x, cy: it.y, r: it.r, class: "sphere " + it.cls + (it.ici ? " ici" : "") }, g);
     if(!it.lab) continue;
     const s = echelleTexte();
     const x = it.x + it.lab.dx, y = it.y + it.lab.dy;
@@ -1184,8 +1309,8 @@ function rendre(f, nomsAvant){
     const parent = coucheNoms ? el("g", { class: "groupe", "data-k": it.key, opacity: it.op.toFixed(3) }, coucheNoms) : g;
     const t = el("text", { x, y, "text-anchor": it.lab.a }, parent);
     if(nomsAvant && !nomsAvant.has(it.key)) t.setAttribute("class", "fondu");
-    const t1 = el("tspan", { x, class: "nom" }, t);
-    const t2 = el("tspan", { x, dy: s > 1 ? (16 * s).toFixed(1) : 16, class: "dist" }, t);
+    const t1 = el("tspan", { x, class: "nom" + (it.ici ? " ici" : "") }, t);
+    const t2 = el("tspan", { x, dy: s > 1 ? (16 * s).toFixed(1) : 16, class: "dist" + (it.ici ? " ici" : "") }, t);
     if(s > 1){
       t1.setAttribute("style", `font-size:${(15 * s).toFixed(1)}px;stroke-width:${(4 * s).toFixed(1)}px`);
       t2.setAttribute("style", `font-size:${(13 * s).toFixed(1)}px;stroke-width:${(4 * s).toFixed(1)}px`);
@@ -1197,7 +1322,8 @@ function rendre(f, nomsAvant){
   if(coucheNoms) svg.appendChild(coucheNoms);
   el("circle", { cx, cy, r: 8, class: "pouls" }, svg);
   if(f.fleche){
-    el("path", { d: `M${cx} ${cy-13} L${cx+9} ${cy+9} L${cx} ${cy+4} L${cx-9} ${cy+9} Z`, class: "moi" }, svg);
+    el("path", { d: `M${cx} ${cy-13} L${cx+9} ${cy+9} L${cx} ${cy+4} L${cx-9} ${cy+9} Z`, class: "moi",
+                 transform: `rotate(${(f.angleFleche || 0).toFixed(1)} ${cx} ${cy})` }, svg);
   } else {
     el("circle", { cx, cy, r: 8, class: "moi" }, svg);
   }
@@ -1265,9 +1391,11 @@ function ouvrirFiche(s){
   $("ficheDep").textContent = s.info || "";
   $("ficheDist").textContent = formatDistance(s.d) + " à vol d'oiseau";
   let dir = directionTexte(s.cap);
-  if(suitLaMarche()) dir += ", " + directionRelative(s.cap - etat.capMarche);
+  if(etat.mode === "gps" && etat.orientation !== "nord" && etat.capMarche !== null) dir += ", " + directionRelative(s.cap - etat.capMarche);
   $("ficheDir").textContent = dir;
   $("fichePop").textContent = s.pop ? nf(s.pop) + " habitants" : "non renseignée";
+  $("ficheEtendue").textContent = `${formatDistance(rayonLieu(s.taille))} autour du centre` +
+                                  (cleLieu(s) === etat.lieuActuel ? ", vous y êtes" : "");
   majBoutonsNoms();
   $("fiche").hidden = false;
 }
@@ -1319,6 +1447,9 @@ function dessinerCarte(){
       .on("click", ev => { L.DomEvent.stopPropagation(ev); ouvrirFiche(s); })
       .addTo(g);
   }
+  const ici = etat.selection.find(s => s.ici);
+  if(ici) L.circle([ici.lat, ici.lon], { radius: rayonLieu(ici.taille) * 1000, color: couleur("moi"), weight: 2, dashArray: "6 6",
+                                         fillColor: couleur("moi"), fillOpacity: .08, interactive: false }).addTo(g);
   L.circleMarker([p.lat, p.lon], { radius: 8, color: "#fff", weight: 3, fillColor: couleur("moi"), fillOpacity: 1, interactive: false }).addTo(g);
 }
 
@@ -1384,6 +1515,7 @@ function demarrerGps(){
   navigator.geolocation.watchPosition(p => {
     etat.gps = { lat: p.coords.latitude, lon: p.coords.longitude, prec: p.coords.accuracy };
     majCapMarche(p);
+    majVillageTraverse();
     if(etat.mode === "gps") rafraichir(false); else majSource();
   }, err => {
     const raisons = { 1: "l'accès à la localisation est refusé", 2: "la position est introuvable", 3: "le délai est dépassé" };
@@ -1437,7 +1569,7 @@ function demarrer(){
   etat.epingles = new Set(noms.epingles || []);
   etat.masques = new Set(noms.masques || []);
   $("nbInterventions").textContent = etat.epingles.size + etat.masques.size;
-  if(reg.orientation === "marche") etat.orientation = "marche";
+  if(reg.orientation === "marche" || reg.orientation === "village") etat.orientation = reg.orientation;
   if(reg.rendu === "doux") etat.rendu = "doux";
   if(reg.pays === "vn") etat.pays = "vn";
   $("selNombre").value = String(etat.nb);
