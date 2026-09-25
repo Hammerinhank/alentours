@@ -995,7 +995,7 @@ function rafraichir(force){
 function majSource(){
   const s = $("source"), dr = PAYS[etat.pays].drapeau + " ";
   if(etat.mode === "sim"){
-    s.textContent = dr + (etat.lieuNom ? `À ${etat.lieuNom}, ` : "") + (etat.orientation !== "nord" ? "Position simulée, nord en haut" : "Position simulée");
+    s.textContent = dr + (etat.lieuNom ? `À ${etat.lieuNom}, position simulée` : "Position simulée") + (etat.orientation !== "nord" ? ", nord en haut" : "");
     s.classList.add("sim");
     $("btnReel").hidden = false;
     return;
@@ -1003,7 +1003,8 @@ function majSource(){
   s.classList.remove("sim");
   $("btnReel").hidden = true;
   if(!etat.gps){ s.textContent = dr + "Recherche de votre position…"; return; }
-  let t = (etat.lieuNom ? `À ${etat.lieuNom}, ` : "") + `Position réelle à ${Math.round(etat.gps.prec)} m près`;
+  let t = etat.lieuNom ? `À ${etat.lieuNom}, position réelle à ${Math.round(etat.gps.prec)} m près`
+                       : `Position réelle à ${Math.round(etat.gps.prec)} m près`;
   if(villageDerriere()) t += ", " + etat.suivi.traverse.nom + " derrière";
   else if(etat.orientation !== "nord") t += suitLaMarche() ? ", sens de la marche" : ", nord en haut en attendant un déplacement";
   s.textContent = dr + t;
