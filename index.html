@@ -241,7 +241,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.12</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.13</button>
 </header>
 
 <main>
@@ -402,7 +402,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.12";
+const VERSION = "1.13";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -465,6 +465,10 @@ const HISTORIQUE = [
     "Étendue estimée de chaque lieu d'après sa population (rayon ≈ 29 m × population^0,425, entre 400 m et 8 km, marge de 30 % comprise).",
     "Quand on est dans un lieu : halo bleu pulsant, contour et ligne bleus, « Vous y êtes » ; nom rappelé dans l'en-tête et étendue tracée sur la carte.",
     "Mode « Dernier village derrière » : un village ne compte comme traversé que si l'on est passé dans son étendue ; « plus proche » se mesure au bord du lieu."
+  ]},
+  { v: "1.13", date: "25/09/2026", notes: [
+    "Grandes tailles : un nom reste collé à son cercle (plus d'emplacement éloigné) et ne recouvre jamais le cercle d'une autre localité nommée.",
+    "Un cercle déjà recouvert par un nom attend le tour suivant : l'alternance tourne sur davantage de présentations au lieu d'éloigner les noms."
   ]}
 ];
 
@@ -500,7 +504,7 @@ const etat = {
   orientation: "nord", rendu: "instantane",
   capMarche: null, pointCap: null,
   enCours: null, erreurs: { fr: null, vn: null },
-  taille: "normale", epingles: new Set(), masques: new Set(), cacheesAvant: new Set(),
+  taille: "normale", epingles: new Set(), masques: new Set(), cacheesAvant: new Set(), vuAuTour: new Map(), tourNoms: 0,
   suivi: { cle: null, dMin: Infinity, traverse: null },
   rayons: null, lieuActuel: null, lieuNom: null,
   selection: [], loin: null, dernierCalcul: null, derniereRot: null,
@@ -1151,14 +1155,22 @@ function placerEtiquettes(f){
 
   let ordre = f.items.slice(); // du plus proche au plus lointain
   if(s > 1){
-    // épinglés d'abord, puis ceux qui attendaient au tour précédent, puis les autres
-    const rang = it => it.ici || etat.epingles.has(it.key) ? 0 : etat.cacheesAvant.has(it.key) ? 1 : 2;
+    // lieu actuel et épinglés d'abord, puis ceux dont le nom n'a pas été affiché depuis le plus longtemps
+    const vu = etat.vuAuTour;
+    const rang = it => it.ici || etat.epingles.has(it.key) ? -2e9 : (vu.has(it.key) ? vu.get(it.key) : -1e9);
     ordre = ordre.map((it, i) => [it, i]).sort((a, b) => rang(a[0]) - rang(b[0]) || a[1] - b[1]).map(x => x[0]);
+    etat.tourNoms++;
   }
   const cachees = new Set();
+  const boitesNoms = [];                       // noms déjà posés (grandes tailles)
+  const touche = (a, b) => !(a.x2 < b.x1 || a.x1 > b.x2 || a.y2 < b.y1 || a.y1 > b.y2);
   for(const it of ordre){
     it.lab = null;
     if(s > 1 && etat.masques.has(it.key) && !it.ici) continue;
+    const bSphere = { x1: it.x - it.r, y1: it.y - it.r, x2: it.x + it.r, y2: it.y + it.r };
+    const force = it.ici || etat.epingles.has(it.key);
+    // grandes tailles : si un nom déjà posé recouvre ce cercle, il attend le tour suivant
+    if(s > 1 && !force && boitesNoms.some(b => touche(b, bSphere))){ cachees.add(it.key); continue; }
     const l2 = it.ici ? "Vous y êtes" : formatDistance(it.s.d);
     const c = [
       { x: it.x, y: it.y + it.r + 15 * s, a: "middle" },
@@ -1169,11 +1181,14 @@ function placerEtiquettes(f){
     if(s > 1){
       const d = it.r * 0.7;
       c.push({ x: it.x + d + 3, y: it.y + d + 13 * s, a: "start" }, { x: it.x - d - 3, y: it.y + d + 13 * s, a: "end" },
-             { x: it.x + d + 3, y: it.y - d - 18 * s, a: "start" }, { x: it.x - d - 3, y: it.y - d - 18 * s, a: "end" },
-             { x: it.x, y: it.y + it.r + 30 * s, a: "middle" }, { x: it.x, y: it.y - it.r - 35 * s, a: "middle" });
+             { x: it.x + d + 3, y: it.y - d - 18 * s, a: "start" }, { x: it.x - d - 3, y: it.y - d - 18 * s, a: "end" });
     }
     const boites = w => c.map(k => {
-      const x1 = k.a === "middle" ? k.x - w/2 : k.a === "start" ? k.x : k.x - w;
+      let x1 = k.a === "middle" ? k.x - w/2 : k.a === "start" ? k.x : k.x - w;
+      if(s > 1 && k.a === "middle"){ // dessus/dessous : on glisse le nom latéralement pour qu'il reste à l'écran
+        const x1b = Math.min(Math.max(x1, 2), W - 2 - w);
+        if(x1b !== x1){ k = { ...k, x: k.x + (x1b - x1) }; x1 = x1b; }
+      }
       return { ...k, b: s > 1 ? { x1, y1: k.y - 15 * s, x2: x1 + w, y2: k.y + 21 * s }
                               : { x1, y1: k.y - 13, x2: x1 + w, y2: k.y + 17 } };
     });
@@ -1195,11 +1210,13 @@ function placerEtiquettes(f){
         choix = cands.find(k => dedans(k.b) && !chevauche(k.b));
         if(choix){ l1 = v; break; }
       }
-      if(!choix && (it.ici || etat.epingles.has(it.key))){ l1 = derniere.v; choix = derniere.cands.find(k => dedans(k.b)) || derniere.cands[0]; }
+      if(!choix && force){ l1 = derniere.v; choix = derniere.cands.find(k => dedans(k.b)) || derniere.cands[0]; }
     }
     if(!choix){ cachees.add(it.key); continue; }
     occupes.push(choix.b);
+    if(s > 1){ boitesNoms.push(choix.b); occupes.push(bSphere); } // le cercle d'une localité nommée devient intouchable
     it.lab = { dx: choix.x - it.x, dy: choix.y - it.y, a: choix.a, l1, l2 };
+    if(s > 1) etat.vuAuTour.set(it.key, etat.tourNoms);
   }
   f.cachees = cachees;
   etat.cacheesAvant = cachees;
