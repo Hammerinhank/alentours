@@ -45,7 +45,14 @@ button{ cursor:pointer; }
 .barre{ display:flex; align-items:center; gap:10px; padding:10px 16px 8px; }
 .titre{ flex:1; min-width:0; }
 .titre h1{ margin:0; font-size:28px; font-weight:700; letter-spacing:-.01em; line-height:1; }
-.source{ display:block; margin-top:4px; font-size:15px; color:var(--doux); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ligneSource{ display:flex; align-items:center; gap:6px; margin-top:4px; padding:0; border:0; background:transparent; max-width:100%; text-align:left; }
+.pastilleGps{ width:11px; height:11px; border-radius:50%; flex-shrink:0; background:var(--doux); }
+.pastilleGps.ok{ background:#2E9D57; }
+.pastilleGps.moyen{ background:#E0A020; }
+.pastilleGps.ko{ background:var(--ville); }
+.pastilleGps.attente{ background:#E0A020; animation:clignote 1s steps(2) infinite; }
+@keyframes clignote{ 50%{ opacity:.25; } }
+.source{ display:block; margin-top:0; font-size:15px; color:var(--doux); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .source.sim{ color:var(--ville); font-weight:600; }
 .version{
   border:0; border-radius:999px; background:var(--moi); color:#fff;
@@ -235,13 +242,13 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 <header class="barre">
   <div class="titre">
     <h1>Alentours</h1>
-    <span id="source" class="source">Recherche de votre position…</span>
+    <button id="btnEtatGps" class="ligneSource" aria-label="État du GPS"><i id="pastilleGps" class="pastilleGps"></i><span id="source" class="source">Recherche de votre position…</span></button>
   </div>
   <button id="btnReel" class="reel" hidden>Revenir à ma position</button>
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.16</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.17</button>
 </header>
 
 <main>
@@ -390,6 +397,26 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   </div>
 </dialog>
 
+<dialog id="dlgGps">
+  <h2>État du GPS</h2>
+  <div class="fiche" style="position:static;box-shadow:none;padding:0">
+    <dl>
+      <dt>État</dt><dd id="gpsEtat"></dd>
+      <dt>Dernière position</dt><dd id="gpsAge"></dd>
+      <dt>Précision</dt><dd id="gpsPrec"></dd>
+      <dt>Vitesse</dt><dd id="gpsVit"></dd>
+      <dt>Direction</dt><dd id="gpsCap"></dd>
+      <dt>Positions reçues</dt><dd id="gpsNb"></dd>
+      <dt>Relances</dt><dd id="gpsRel"></dd>
+      <dt>Dernière erreur</dt><dd id="gpsErr"></dd>
+    </dl>
+  </div>
+  <div class="piedDialog">
+    <button class="btnSecondaire" id="btnRelancerGps">Relancer le GPS</button>
+    <button class="btnPrincipal" id="btnFermerGps">Fermer</button>
+  </div>
+</dialog>
+
 <dialog id="dlgVersion">
   <h2>Historique des versions</h2>
   <div id="histo" class="histo"></div>
@@ -403,7 +430,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.16";
+const VERSION = "1.17";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -480,6 +507,13 @@ const HISTORIQUE = [
   ]},
   { v: "1.16", date: "25/09/2026", notes: [
     "Grandes tailles : après le tour de rôle équitable, les noms « au repos » complètent l'affichage partout où il reste de la place : toujours un maximum de noms, sans lieu oublié."
+  ]},
+  { v: "1.17", date: "26/09/2026", notes: [
+    "GPS surveillé : pastille d'état dans l'en-tête (vert, orange, rouge), relance automatique si aucune position depuis 20 s ou au retour dans l'app, positions périmées ou très imprécises écartées.",
+    "Toucher la ligne de position ouvre l'état du GPS (âge, précision, vitesse, cap, relances, erreurs) avec un bouton pour le relancer.",
+    "L'app démarre toujours sur la position réelle (la position simulée reste mémorisée pour l'onglet Carte).",
+    "France : les communes sont placées sur leur mairie (le bourg) au lieu du centre géométrique du territoire ; liste reconstruite automatiquement.",
+    "Quand on est dans un lieu, son cercle n'est plus repoussé loin du centre : il entoure la position."
   ]}
 ];
 
@@ -491,7 +525,10 @@ const CLE_NOMS = "alentours_noms";
 const ECHELLES = { normale: 1, grande: 1.35, tresgrande: 1.7, enorme: 2.1 };
 const DELAI_ALTERNANCE = 3000;
 const ANCIEN_CACHE = "alentours_communes_v1";
-const URL_COMMUNES = "https://geo.api.gouv.fr/communes?fields=nom,centre,population,codeDepartement&format=json&geometry=centre";
+const URL_COMMUNES = "https://geo.api.gouv.fr/communes?fields=nom,centre,mairie,population,codeDepartement&format=json&geometry=centre";
+/* Version des données : 2 = communes françaises placées sur leur mairie (v1.17) */
+const VERSION_DONNEES = { fr: 2, vn: 1 };
+const donneesAJour = (p, x) => (x.vd || 1) >= VERSION_DONNEES[p];
 const SERVEURS_OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
 const REQUETE_VN = '[out:csv(::lat,::lon,name,"name:vi",population,place;false)][timeout:180];' +
                    'area["ISO3166-1"="VN"][admin_level=2]->.a;node["place"~"^(city|town|village)$"](area.a);out;';
@@ -775,8 +812,9 @@ async function preparerDepuisSource(p){
     const brut = JSON.parse(texte), total = brut.length;
     for(let i = 0; i < total; i++){
       const c = brut[i];
-      if(c.centre && c.centre.coordinates){
-        const [lon, lat] = c.centre.coordinates, pop = c.population || 0;
+      const pt = c.mairie && c.mairie.coordinates ? c.mairie : c.centre; // la mairie marque le bourg ; à défaut, le centre du territoire
+      if(pt && pt.coordinates){
+        const [lon, lat] = pt.coordinates, pop = c.population || 0;
         d.push([c.nom, +lat.toFixed(4), +lon.toFixed(4), pop, c.codeDepartement ? "Département " + c.codeDepartement : "", pop]);
       }
       if(i % 2000 === 1999){
@@ -824,13 +862,13 @@ async function preparerDepuisSource(p){
 async function construireDepuisSource(p){
   const d = await preparerDepuisSource(p);
   const date = new Date().toISOString();
-  const c = { d, date, origine: "source" };
+  const c = { d, date, origine: "source", vd: VERSION_DONNEES[p] };
   await idbEcrire("lieux_" + p, c);
   etape(0.85, 1);
   if(etat.depot.token){
     try{
       await ecrireDepot(PAYS[p].fichier,
-        { version: 1, pays: p, date, champs: ["nom", "lat", "lon", "population", "info", "taille"], d },
+        { version: 1, vd: VERSION_DONNEES[p], pays: p, date, champs: ["nom", "lat", "lon", "population", "info", "taille"], d },
         `Alentours : liste ${PAYS[p].nom} (${nf(d.length)} ${PAYS[p].lieux})`);
       c.origine = "source, enregistrée dans le dépôt";
       await idbEcrire("lieux_" + p, c);
@@ -849,27 +887,19 @@ async function chargerLieux(p, forcerDepot){
   if(!forcerDepot){
     if(etat.donnees[p]) return etat.donnees[p];
     const c = await idbLire("lieux_" + p);
-    if(c && Array.isArray(c.d) && c.d.length){ progres(1, "Liste en mémoire", ""); return (etat.donnees[p] = c); }
-    if(p === "fr"){ // reprise de l'ancien cache localStorage (v1.0-1.1), puis libération de la place
-      const ancien = lireJSON(ANCIEN_CACHE, null);
-      try{ localStorage.removeItem(ANCIEN_CACHE); }catch(e){}
-      if(ancien && Array.isArray(ancien.d) && ancien.d.length > 1000){
-        const m = { d: ancien.d.map(x => [x[0], x[1], x[2], x[3], x[4] ? "Département " + x[4] : "", x[3]]),
-                    date: new Date(ancien.date || Date.now()).toISOString(), origine: "ancien cache" };
-        await idbEcrire("lieux_fr", m);
-        progres(1, "Liste en mémoire", "");
-        return (etat.donnees.fr = m);
-      }
-    }
+    if(c && Array.isArray(c.d) && c.d.length && donneesAJour(p, c)){ progres(1, "Liste en mémoire", ""); return (etat.donnees[p] = c); }
+    try{ localStorage.removeItem(ANCIEN_CACHE); }catch(e){} // ancien cache (v1.0-1.1) : place libérée
   }
   try{
     etape(0, 0.9);
     progres(null, "Lecture du dépôt", `Lecture de la liste ${PAYS[p].nom} dans le dépôt…`);
     const f = await lireDepot(PAYS[p].fichier, "depot_" + p);
-    if(f && Array.isArray(f.d) && f.d.length){
+    if(f && Array.isArray(f.d) && f.d.length && !donneesAJour(p, f))
+      progres(null, "Liste à mettre à jour", `Liste ${PAYS[p].nom} du dépôt à mettre à jour (communes placées sur leur mairie) : préparation depuis la source…`);
+    else if(f && Array.isArray(f.d) && f.d.length){
       etape(0.9, 1);
       progres(0, "Enregistrement local", "Enregistrement de la liste sur l'appareil…");
-      const c = { d: f.d, date: f.date || new Date().toISOString(), origine: "dépôt GitHub" };
+      const c = { d: f.d, date: f.date || new Date().toISOString(), origine: "dépôt GitHub", vd: f.vd || 1 };
       await idbEcrire("lieux_" + p, c);
       progres(1, `${nf(c.d.length)} ${PAYS[p].lieux}`, `${nf(c.d.length)} ${PAYS[p].lieux} lues dans le dépôt.`);
       return (etat.donnees[p] = c);
@@ -1020,6 +1050,8 @@ function majSource(){
   if(!etat.gps){ s.textContent = dr + "Recherche de votre position…"; return; }
   let t = etat.lieuNom ? `À ${etat.lieuNom}, position réelle à ${Math.round(etat.gps.prec)} m près`
                        : `Position réelle à ${Math.round(etat.gps.prec)} m près`;
+  const ag = ageGps();
+  if(ag !== null && ag > 10) t += `, il y a ${ag} s`;
   if(villageDerriere()) t += ", " + etat.suivi.traverse.nom + " derrière";
   else if(etat.orientation !== "nord") t += suitLaMarche() ? ", sens de la marche" : ", nord en haut en attendant un déplacement";
   s.textContent = dr + t;
@@ -1113,7 +1145,7 @@ function calculerDisposition(W, H){
     }
     for(const p of pts){
       const dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy) || 1;
-      const dMin = p.r + 16, dMax = R + 20;
+      const dMin = p.s.ici ? 0 : p.r + 16, dMax = R + 20; // le lieu où l'on est peut entourer la position
       if(d < dMin){ p.x = cx + dx / d * dMin; p.y = cy + dy / d * dMin; }
       if(d > dMax){ p.x = cx + dx / d * dMax; p.y = cy + dy / d * dMax; }
     }
@@ -1585,21 +1617,87 @@ function montrerVue(id){
 }
 
 /* ---------- GPS ---------- */
+/* Suivi de santé du GPS */
+const gpsInfo = { id: null, demarre: 0, derniere: 0, tDerniere: 0, nb: 0, ignorees: 0, relances: 0,
+                  motif: "", erreur: null, codeErreur: 0, vitesse: null, cap: null };
+const RAISONS_GPS = { 1: "accès à la localisation refusé", 2: "position introuvable", 3: "délai dépassé" };
+
 function demarrerGps(){
   if(!("geolocation" in navigator)){
+    gpsInfo.erreur = "ce navigateur ne donne pas accès à la position";
     afficherEtat("Ce navigateur ne donne pas accès à la position. Placez-vous depuis l'onglet Carte.", true);
     return;
   }
-  navigator.geolocation.watchPosition(p => {
-    etat.gps = { lat: p.coords.latitude, lon: p.coords.longitude, prec: p.coords.accuracy };
-    majCapMarche(p);
-    majVillageTraverse();
-    if(etat.mode === "gps") rafraichir(false); else majSource();
-  }, err => {
-    const raisons = { 1: "l'accès à la localisation est refusé", 2: "la position est introuvable", 3: "le délai est dépassé" };
-    if(etat.mode === "gps")
-      afficherEtat(`Position indisponible : ${raisons[err.code] || err.message}. Autorisez la localisation, ou placez-vous depuis l'onglet Carte.`, true);
-  }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
+  if(gpsInfo.id !== null) navigator.geolocation.clearWatch(gpsInfo.id);
+  gpsInfo.demarre = Date.now();
+  gpsInfo.id = navigator.geolocation.watchPosition(recevoirPosition, erreurGps,
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }); // maximumAge 0 : jamais de position en cache
+}
+function relancerGps(motif){
+  if(!("geolocation" in navigator)) return;
+  gpsInfo.relances++; gpsInfo.motif = motif;
+  demarrerGps();
+  navigator.geolocation.getCurrentPosition(recevoirPosition, () => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+}
+function recevoirPosition(p){
+  const c = p.coords, t = p.timestamp || Date.now();
+  if(t <= gpsInfo.tDerniere) return;                                   // position périmée ou déjà reçue
+  const recente = Date.now() - gpsInfo.derniere < 20000;
+  if(c.accuracy > 1000 && recente && etat.gps && etat.gps.prec < 200){  // très imprécise alors qu'on en a une bonne
+    gpsInfo.ignorees++; return;
+  }
+  gpsInfo.tDerniere = t; gpsInfo.derniere = Date.now(); gpsInfo.nb++;
+  gpsInfo.erreur = null; gpsInfo.codeErreur = 0;
+  gpsInfo.vitesse = c.speed; gpsInfo.cap = c.heading;
+  etat.gps = { lat: c.latitude, lon: c.longitude, prec: c.accuracy };
+  majCapMarche(p);
+  majVillageTraverse();
+  if(etat.mode === "gps") rafraichir(false); else majSource();
+  majPastilleGps();
+}
+function erreurGps(err){
+  gpsInfo.erreur = RAISONS_GPS[err.code] || err.message; gpsInfo.codeErreur = err.code;
+  const sansPosition = !gpsInfo.derniere || Date.now() - gpsInfo.derniere > 20000;
+  if(etat.mode === "gps" && (sansPosition || err.code === 1))
+    afficherEtat(`Position indisponible : ${gpsInfo.erreur}. ` +
+                 (err.code === 1 ? "Autorisez la localisation pour ce site (Réglages de l'iPhone > Safari > Position), ou placez-vous depuis l'onglet Carte."
+                                 : "Nouvel essai automatique en cours…"), true);
+  majPastilleGps();
+}
+function ageGps(){ return gpsInfo.derniere ? Math.round((Date.now() - gpsInfo.derniere) / 1000) : null; }
+function formatAge(a){ return a === null ? "aucune" : a < 60 ? `il y a ${a} s` : `il y a ${Math.floor(a / 60)} min ${a % 60} s`; }
+function majPastilleGps(){
+  const pa = $("pastilleGps"), a = ageGps();
+  let cls = "attente", titre = "En attente de la première position";
+  if(etat.mode === "sim"){ cls = ""; titre = "Position simulée : GPS ignoré"; }
+  else if(gpsInfo.codeErreur === 1){ cls = "ko"; titre = "Localisation refusée"; }
+  else if(a !== null && a <= 5){ cls = "ok"; titre = "GPS actif"; }
+  else if(a !== null && a <= 20){ cls = "moyen"; titre = `Dernière position ${formatAge(a)}`; }
+  else if(a !== null){ cls = "ko"; titre = `Pas de position depuis ${a} s`; }
+  pa.className = "pastilleGps " + cls;
+  pa.title = titre;
+  return titre;
+}
+function majPanneauGps(){
+  const a = ageGps();
+  $("gpsEtat").textContent = majPastilleGps();
+  $("gpsAge").textContent = formatAge(a);
+  $("gpsPrec").textContent = etat.gps ? `± ${Math.round(etat.gps.prec)} m` : "–";
+  $("gpsVit").textContent = gpsInfo.vitesse !== null && gpsInfo.vitesse >= 0 && !isNaN(gpsInfo.vitesse) ? `${Math.round(gpsInfo.vitesse * 3.6)} km/h` : "non fournie";
+  $("gpsCap").textContent = etat.capMarche !== null ? `${Math.round(etat.capMarche)}° (${directionTexte(etat.capMarche).replace(/^(au |à l')/, "")})` : "inconnue (à l'arrêt)";
+  $("gpsNb").textContent = `${nf(gpsInfo.nb)}` + (gpsInfo.ignorees ? ` (${nf(gpsInfo.ignorees)} écartées car imprécises)` : "");
+  $("gpsRel").textContent = gpsInfo.relances ? `${gpsInfo.relances} (dernière : ${gpsInfo.motif})` : "aucune";
+  $("gpsErr").textContent = gpsInfo.erreur || "aucune";
+}
+/* Chien de garde : chaque seconde, pastille à jour et relance si le GPS se tait */
+function surveillerGps(){
+  majPastilleGps();
+  if(etat.mode === "gps") majSource();
+  if($("dlgGps").open) majPanneauGps();
+  if(document.hidden || !("geolocation" in navigator) || gpsInfo.codeErreur === 1) return;
+  const depuisDemarrage = Date.now() - gpsInfo.demarre;
+  if(gpsInfo.derniere && Date.now() - gpsInfo.derniere > 20000 && depuisDemarrage > 20000) relancerGps("aucune position depuis 20 s");
+  else if(!gpsInfo.derniere && depuisDemarrage > 30000) relancerGps("aucune position reçue");
 }
 
 /* ---------- Historique des versions ---------- */
@@ -1658,7 +1756,7 @@ function demarrer(){
   if(posSauvee){
     if(posSauvee.sims) etat.sims = { fr: posSauvee.sims.fr || null, vn: posSauvee.sims.vn || null };
     else if(posSauvee.sim) etat.sims.fr = posSauvee.sim; // format v1.0-1.1
-    etat.mode = posSauvee.mode === "sim" && etat.sims[etat.pays] ? "sim" : "gps";
+    etat.mode = "gps"; // on démarre toujours sur la position réelle (la simulation reste mémorisée pour l'onglet Carte)
   }
   etat.depot = { ...DEPOT_DEFAUT, ...lireJSON(CLE_DEPOT, {}) };
   if(etat.depot.repo === "entourages"){ etat.depot.repo = "alentours"; ecrireJSON(CLE_DEPOT, etat.depot); } // correction du nom de dépôt (v1.4)
@@ -1759,6 +1857,11 @@ function demarrer(){
   majSource();
   demarrerGps();
   activerDonnees(etat.pays, false, false);
+  setInterval(surveillerGps, 1000);
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) relancerGps("retour dans l'application"); });
+  $("btnEtatGps").addEventListener("click", () => { majPanneauGps(); $("dlgGps").showModal(); });
+  $("btnFermerGps").addEventListener("click", () => $("dlgGps").close());
+  $("btnRelancerGps").addEventListener("click", () => { relancerGps("demande manuelle"); majPanneauGps(); });
 }
 demarrer();
 </script>
