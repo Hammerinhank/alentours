@@ -235,6 +235,36 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 .ligne.ici{ stroke:var(--moi); stroke-width:3; }
 .nom.ici{ fill:var(--moi); }
 .dist.ici{ fill:var(--moi); font-weight:600; }
+
+/* Parcours (v1.18) */
+.enteteParcours{ display:flex; align-items:flex-start; gap:10px; padding:10px 16px 6px; }
+.etatTrajet{ flex:1; margin:0; font-size:15px; color:var(--doux); line-height:1.35; }
+.etatTrajet .rec{ color:var(--ville); font-weight:700; }
+.listeParcours{ list-style:none; margin:0; padding:0 16px 16px; overflow-y:auto; flex:1; min-height:0; }
+.itemParcours{
+  width:100%; text-align:left; border:1px solid var(--anneau); background:var(--surface); border-radius:10px;
+  padding:10px 12px; margin-top:8px; display:block;
+}
+.itemParcours.choisi{ border-color:var(--moi); box-shadow:inset 0 0 0 1px var(--moi); }
+.itemParcours b{ display:block; font-size:17px; }
+.itemParcours small{ display:block; color:var(--doux); font-size:14px; margin-top:2px; }
+.badge{ display:inline-block; font-size:12px; font-weight:700; padding:1px 7px; border-radius:999px; margin-left:6px; vertical-align:middle; }
+.badge.attente{ background:var(--bourg); color:#1F2B25; }
+.badge.test{ background:var(--anneau); color:var(--encre); }
+.actionsParcours{ display:flex; gap:8px; justify-content:flex-end; margin-top:4px; }
+.actionsParcours button{ border:1px solid var(--anneau); background:transparent; border-radius:8px; padding:4px 10px; font-size:14px; color:var(--doux); }
+.actionsParcours button.danger{ color:var(--ville); border-color:var(--ville); }
+.videParcours{ color:var(--doux); font-size:15px; padding:12px 2px; }
+.barreParcours{ display:flex; align-items:center; gap:10px; padding:6px 16px 2px; }
+.barreParcours[hidden]{ display:none; }
+.quitterParcours{ border:1px solid var(--anneau); background:var(--surface); border-radius:50%; width:36px; height:36px; font-size:22px; line-height:1; color:var(--doux); flex-shrink:0; }
+.curseurParcours{ flex:1; min-width:0; }
+.curseurParcours input{ width:100%; accent-color:var(--moi); height:28px; }
+.lblParcours{ display:flex; justify-content:space-between; gap:8px; font-size:14px; color:var(--doux); }
+.lblParcours span:first-child{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.lblParcours span:last-child{ white-space:nowrap; flex-shrink:0; }
+.ligneSource{ min-width:0; width:100%; }
+.ligneSource .source{ min-width:0; }
 </style>
 </head>
 <body>
@@ -248,7 +278,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
   <button id="btnReglages" class="roue" aria-label="Réglages">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.17</button>
+  <button id="btnVersion" class="version" aria-label="Historique des versions">v1.19</button>
 </header>
 
 <main>
@@ -257,6 +287,13 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
       <div id="etat" class="etat" hidden></div>
       <div id="bulle" class="bulle" role="status" aria-live="polite"></div>
       <svg id="radar" role="img" aria-label="Localités proches de votre position"></svg>
+    </div>
+    <div id="barreParcours" class="barreParcours" hidden>
+      <button id="btnQuitterParcours" class="quitterParcours" aria-label="Quitter le parcours">×</button>
+      <div class="curseurParcours">
+        <input id="curseurParcours" type="range" min="0" max="1000" step="1" value="0" aria-label="Position le long du parcours">
+        <div class="lblParcours"><span id="nomParcours"></span><span id="kmParcours"></span></div>
+      </div>
     </div>
     <div class="reglages">
       <label>Localités
@@ -283,6 +320,14 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
     </div>
   </section>
 
+  <section id="vueParcours" class="vue">
+    <div class="enteteParcours">
+      <p id="etatTrajet" class="etatTrajet"></p>
+      <button class="btnSecondaire" id="btnActualiserParcours">Actualiser</button>
+    </div>
+    <ul id="listeParcours" class="listeParcours"></ul>
+  </section>
+
   <section id="vueCarte" class="vue">
     <div class="recherche">
       <input id="rech" type="search" placeholder="Aller à une localité…" autocomplete="off">
@@ -296,6 +341,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 <nav class="onglets">
   <button data-vue="vueRadar" class="actif">Radar</button>
   <button data-vue="vueCarte">Carte</button>
+  <button data-vue="vueParcours">Parcours</button>
 </nav>
 
 <div id="fiche" class="fiche" hidden>
@@ -430,7 +476,7 @@ details.depot summary{ font-size:17px; font-weight:700; cursor:pointer; }
 /* =========================================================
    Alentours — version et historique
    ========================================================= */
-const VERSION = "1.17";
+const VERSION = "1.19";
 const HISTORIQUE = [
   { v: "1.0", date: "24/09/2026", notes: [
     "Création : radar des communes les plus proches (cercles selon la population, lignes depuis la position).",
@@ -514,6 +560,16 @@ const HISTORIQUE = [
     "L'app démarre toujours sur la position réelle (la position simulée reste mémorisée pour l'onglet Carte).",
     "France : les communes sont placées sur leur mairie (le bourg) au lieu du centre géométrique du territoire ; liste reconstruite automatiquement.",
     "Quand on est dans un lieu, son cercle n'est plus repoussé loin du centre : il entoure la position."
+  ]},
+  { v: "1.18", date: "27/09/2026", notes: [
+    "Enregistrement automatique des parcours réels : démarre après 1 km de déplacement, se termine après 10 min sans avoir parcouru 1 km, puis envoi dans le dépôt GitHub (dossier parcours/).",
+    "Nouvel onglet « Parcours » : liste des parcours (test, en attente d'envoi, enregistrés) ; un parcours choisi s'affiche sur la carte.",
+    "Sur le radar, un curseur permet de rejouer le parcours du début à la fin, avec le sens de la marche.",
+    "Parcours de test Roynac → Montélimar, par la route (OSRM) ou à vol d'oiseau à défaut, découpé en tronçons de 1 km."
+  ]},
+  { v: "1.19", date: "27/09/2026", notes: [
+    "Onglet Parcours : boutons « Renommer » et « Supprimer » sous chaque parcours (dans le dépôt GitHub et son index, ou sur l'appareil s'il n'est pas encore envoyé).",
+    "Enregistrement : un point tous les 100 m au lieu de 50 m."
   ]}
 ];
 
@@ -555,6 +611,7 @@ const etat = {
   taille: "normale", epingles: new Set(), masques: new Set(), cacheesAvant: new Set(), vuAuTour: new Map(), tourNoms: 0,
   suivi: { cle: null, dMin: Infinity, traverse: null },
   rayons: null, lieuActuel: null, lieuNom: null,
+  parcoursSel: null, posParcours: null, capParcours: null, indexParcours: null, erreurParcours: null, erreurListe: null, coucheParcours: null,
   selection: [], loin: null, dernierCalcul: null, derniereRot: null,
   affiche: null, anim: null,
   carte: null, couche: null, communeFiche: null,
@@ -639,7 +696,11 @@ function ecartRad(b, a){ const T = 2 * Math.PI; return ((b - a + Math.PI) % T + 
 function rayonSphere(taille){ return 5 + 3.2 * Math.log10(Math.max(taille, 10)); }
 function classeTaille(taille){ return taille >= 20000 ? "ville" : taille >= 2000 ? "bourg" : "village"; }
 function couleur(nom){ return getComputedStyle(document.documentElement).getPropertyValue("--" + nom).trim(); }
-function positionCourante(){ return etat.mode === "sim" ? etat.sims[etat.pays] : etat.gps; }
+function positionCourante(){
+  return etat.mode === "sim" ? etat.sims[etat.pays] : etat.mode === "parcours" ? etat.posParcours : etat.gps;
+}
+/* Direction de marche : GPS en réel, direction du tronçon en rejouant un parcours */
+function capActuel(){ return etat.mode === "gps" ? etat.capMarche : etat.mode === "parcours" ? etat.capParcours : null; }
 /* Étendue d'un lieu : surface bâtie ≈ a × P^0,85 (loi d'échelle urbaine, exposant 0,75 à 0,95 selon les études),
    soit un rayon ≈ 22 m × P^0,425, calé sur un village de 500 habitants ≈ 0,3 km² ;
    majoré de 30 %, au moins 400 m (passer très près compte comme passer dedans), au plus 8 km. */
@@ -671,15 +732,15 @@ function analyserProximite(pos){
 function villageDerriere(){ return etat.orientation === "village" && etat.mode === "gps" && !!etat.gps && !!etat.suivi.traverse; }
 /* Radar orienté selon la marche (mode « marche », ou mode « village » hors alignement) */
 function suitLaMarche(){
-  return (etat.orientation === "marche" || etat.orientation === "village") && etat.mode === "gps" &&
-         etat.capMarche !== null && !villageDerriere();
+  return (etat.orientation === "marche" || etat.orientation === "village") &&
+         capActuel() !== null && !villageDerriere();
 }
 function rotationRadar(){
   if(villageDerriere()){
     const t = etat.suivi.traverse;
     return (cap(etat.gps.lat, etat.gps.lon, t.lat, t.lon) + 180) % 360; // le village passe en bas, à la verticale
   }
-  return suitLaMarche() ? etat.capMarche : 0;
+  return suitLaMarche() ? capActuel() : 0;
 }
 /* Suivi du village le plus proche (parmi ceux du filtre) pour détecter le dernier village traversé :
    un village est « traversé » quand, étant le plus proche, on commence à s'en éloigner. */
@@ -1039,6 +1100,13 @@ function rafraichir(force){
 
 function majSource(){
   const s = $("source"), dr = PAYS[etat.pays].drapeau + " ";
+  $("barreParcours").hidden = etat.mode !== "parcours";
+  if(etat.mode === "parcours"){
+    s.textContent = dr + (etat.lieuNom ? `À ${etat.lieuNom}, parcours rejoué` : "Parcours rejoué");
+    s.classList.add("sim");
+    $("btnReel").hidden = false;
+    return;
+  }
   if(etat.mode === "sim"){
     s.textContent = dr + (etat.lieuNom ? `À ${etat.lieuNom}, position simulée` : "Position simulée") + (etat.orientation !== "nord" ? ", nord en haut" : "");
     s.classList.add("sim");
@@ -1154,8 +1222,8 @@ function calculerDisposition(W, H){
 
   const f = {
     W, H, cx, cy, R, rot, anneaux,
-    fleche: (suitLaMarche() || villageDerriere()) && etat.capMarche !== null,
-    angleFleche: etat.capMarche !== null ? ecartDeg(etat.capMarche, rot) : 0,
+    fleche: (suitLaMarche() || villageDerriere()) && capActuel() !== null,
+    angleFleche: capActuel() !== null ? ecartDeg(capActuel(), rot) : 0,
     derriere: villageDerriere(),
     items: pts.map(p => ({ key: cleLieu(p.s), s: p.s, x: p.x, y: p.y, r: p.r,
                            cls: classeTaille(p.s.taille), ici: !!p.s.ici, lab: null, op: 1 }))
@@ -1501,7 +1569,7 @@ function ouvrirFiche(s){
   $("ficheDep").textContent = s.info || "";
   $("ficheDist").textContent = formatDistance(s.d) + " à vol d'oiseau";
   let dir = directionTexte(s.cap);
-  if(etat.mode === "gps" && etat.orientation !== "nord" && etat.capMarche !== null) dir += ", " + directionRelative(s.cap - etat.capMarche);
+  if(etat.orientation !== "nord" && capActuel() !== null) dir += ", " + directionRelative(s.cap - capActuel());
   $("ficheDir").textContent = dir;
   $("fichePop").textContent = s.pop ? nf(s.pop) + " habitants" : "non renseignée";
   $("ficheEtendue").textContent = `${formatDistance(rayonLieu(s.taille))} autour du centre` +
@@ -1536,8 +1604,10 @@ function initCarte(){
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18, attribution: "© OpenStreetMap"
   }).addTo(etat.carte);
+  etat.coucheParcours = L.layerGroup().addTo(etat.carte);
   etat.couche = L.layerGroup().addTo(etat.carte);
   etat.carte.on("click", e => placerSimulation(e.latlng.lat, e.latlng.lng));
+  dessinerParcoursCarte();
   dessinerCarte();
 }
 
@@ -1572,6 +1642,7 @@ function placerSimulation(lat, lon){
 
 function revenirReel(){
   etat.mode = "gps";
+  oublierParcoursChoisi();
   sauverPosition();
   if(!etat.gps) afficherEtat("Recherche de votre position…");
   rafraichir(true);
@@ -1611,6 +1682,10 @@ function montrerVue(id){
   if(id === "vueCarte"){
     initCarte();
     setTimeout(() => etat.carte && etat.carte.invalidateSize(), 60);
+  } else if(id === "vueParcours"){
+    majListeParcours();
+    chargerListeParcours();
+    envoyerParcoursEnAttente();
   } else {
     dessinerRadar(true);
   }
@@ -1650,6 +1725,7 @@ function recevoirPosition(p){
   gpsInfo.erreur = null; gpsInfo.codeErreur = 0;
   gpsInfo.vitesse = c.speed; gpsInfo.cap = c.heading;
   etat.gps = { lat: c.latitude, lon: c.longitude, prec: c.accuracy };
+  enregistrerPosition(c.latitude, c.longitude, c.accuracy);
   majCapMarche(p);
   majVillageTraverse();
   if(etat.mode === "gps") rafraichir(false); else majSource();
@@ -1669,7 +1745,7 @@ function formatAge(a){ return a === null ? "aucune" : a < 60 ? `il y a ${a} s` :
 function majPastilleGps(){
   const pa = $("pastilleGps"), a = ageGps();
   let cls = "attente", titre = "En attente de la première position";
-  if(etat.mode === "sim"){ cls = ""; titre = "Position simulée : GPS ignoré"; }
+  if(etat.mode !== "gps"){ cls = ""; titre = etat.mode === "sim" ? "Position simulée : GPS ignoré" : "Parcours rejoué : GPS ignoré"; }
   else if(gpsInfo.codeErreur === 1){ cls = "ko"; titre = "Localisation refusée"; }
   else if(a !== null && a <= 5){ cls = "ok"; titre = "GPS actif"; }
   else if(a !== null && a <= 20){ cls = "moyen"; titre = `Dernière position ${formatAge(a)}`; }
@@ -1690,7 +1766,11 @@ function majPanneauGps(){
   $("gpsErr").textContent = gpsInfo.erreur || "aucune";
 }
 /* Chien de garde : chaque seconde, pastille à jour et relance si le GPS se tait */
+let compteurSurveillance = 0;
 function surveillerGps(){
+  compteurSurveillance++;
+  if(compteurSurveillance % 30 === 0) verifierFinTrajet();           // fin de parcours vérifiée toutes les 30 s, même sans nouvelle position
+  if($("vueParcours").classList.contains("active")) majEtatTrajet();
   majPastilleGps();
   if(etat.mode === "gps") majSource();
   if($("dlgGps").open) majPanneauGps();
@@ -1698,6 +1778,378 @@ function surveillerGps(){
   const depuisDemarrage = Date.now() - gpsInfo.demarre;
   if(gpsInfo.derniere && Date.now() - gpsInfo.derniere > 20000 && depuisDemarrage > 20000) relancerGps("aucune position depuis 20 s");
   else if(!gpsInfo.derniere && depuisDemarrage > 30000) relancerGps("aucune position reçue");
+}
+
+/* =========================================================
+   Parcours : enregistrement, envoi, liste et relecture
+   ========================================================= */
+const CLE_TRAJET = "alentours_trajet_en_cours";
+const CLE_PARCOURS_ATTENTE = "alentours_parcours_a_envoyer";
+const CLE_PARCOURS_TEST = "alentours_parcours_test";
+const DEPART_KM = 1, ARRET_KM = 1, ARRET_MS = 10 * 60 * 1000, PAS_KM = 0.1, PRECISION_MAX = 50;
+let trajet = lireJSON(CLE_TRAJET, null); // { phase: "veille" | "enregistrement", ancre, points: [[lat, lon, t]], pays, debut }
+const sauverTrajet = () => ecrireJSON(CLE_TRAJET, trajet);
+
+/* Chaque position réelle (même quand l'écran montre une simulation) alimente l'enregistrement */
+function enregistrerPosition(lat, lon, prec){
+  if(prec > PRECISION_MAX) return;                                   // position trop imprécise pour un tracé
+  const t = Date.now(), pt = [+lat.toFixed(5), +lon.toFixed(5), t];
+  if(!trajet){ trajet = { phase: "veille", ancre: pt, points: [pt], pays: etat.pays }; sauverTrajet(); return; }
+  let change = false;
+  const der = trajet.points[trajet.points.length - 1];
+  if(distanceKm(der[0], der[1], lat, lon) >= PAS_KM){ trajet.points.push(pt); change = true; }
+  if(trajet.phase === "veille"){
+    if(distanceKm(trajet.ancre[0], trajet.ancre[1], lat, lon) > DEPART_KM){
+      trajet.phase = "enregistrement"; trajet.debut = trajet.ancre[2]; trajet.pays = etat.pays; change = true;
+      montrerBulle("Parcours : enregistrement démarré");
+    } else if(t - trajet.ancre[2] > ARRET_MS){                        // resté sur place : on repart d'ici
+      trajet = { phase: "veille", ancre: pt, points: [pt], pays: etat.pays }; change = true;
+    }
+  }
+  if(change) sauverTrajet();
+  verifierFinTrajet();
+}
+
+/* Fin de parcours : moins de 1 km parcouru pendant les 10 dernières minutes */
+function verifierFinTrajet(){
+  if(!trajet || trajet.phase !== "enregistrement") return;
+  const now = Date.now(), pts = trajet.points;
+  if(now - trajet.debut < ARRET_MS) return;
+  let iRef = -1;
+  for(let i = pts.length - 1; i >= 0; i--) if(now - pts[i][2] >= ARRET_MS){ iRef = i; break; }
+  if(iRef < 0) return;
+  const ref = pts[iRef], der = pts[pts.length - 1];
+  const cur = etat.gps && now - gpsInfo.derniere < 60000 ? [etat.gps.lat, etat.gps.lon] : der;
+  let ecart = distanceKm(ref[0], ref[1], cur[0], cur[1]);
+  for(let i = iRef + 1; i < pts.length; i++) ecart = Math.max(ecart, distanceKm(ref[0], ref[1], pts[i][0], pts[i][1]));
+  if(ecart < ARRET_KM) terminerTrajet();
+}
+
+function longueurKm(pts){ let d = 0; for(let i = 1; i < pts.length; i++) d += distanceKm(pts[i-1][0], pts[i-1][1], pts[i][0], pts[i][1]); return d; }
+function lieuLePlusProche(lat, lon){
+  const C = etat.communes; if(!C) return "?";
+  const k = Math.cos(lat * Math.PI / 180); let best = Infinity, nom = "?";
+  for(const c of C){ const dy = c[1] - lat, dx = (c[2] - lon) * k, d2 = dx*dx + dy*dy; if(d2 < best){ best = d2; nom = c[0]; } }
+  return nom;
+}
+function idDate(t){
+  const d = new Date(t), z = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}h${z(d.getMinutes())}m${z(d.getSeconds())}`;
+}
+function formatDuree(ms){
+  const m = Math.round(ms / 60000);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}`;
+}
+function formatKm(d){ return d < 10 ? d.toFixed(1).replace(".", ",") + " km" : Math.round(d) + " km"; }
+function metaParcours(p){ return { id: p.id, nom: p.nom, pays: p.pays, debut: p.debut, fin: p.fin, km: p.km, n: p.points.length }; }
+
+function terminerTrajet(){
+  const t = trajet;
+  trajet = null; sauverTrajet();
+  if(!t || t.points.length < 2) return;
+  const pts = t.points, km = longueurKm(pts);
+  if(km < DEPART_KM) return;
+  const a = pts[0], b = pts[pts.length - 1];
+  const p = { id: idDate(a[2]), nom: `${lieuLePlusProche(a[0], a[1])} → ${lieuLePlusProche(b[0], b[1])}`,
+              pays: t.pays, debut: a[2], fin: b[2], km: +km.toFixed(1), points: pts };
+  const att = lireJSON(CLE_PARCOURS_ATTENTE, []);
+  att.push(p);
+  ecrireJSON(CLE_PARCOURS_ATTENTE, att);
+  montrerBulle(`Parcours enregistré : ${p.nom} (${formatKm(p.km)})`);
+  envoyerParcoursEnAttente();
+  majListeParcours();
+}
+
+/* ---------- Lecture / écriture silencieuses dans le dépôt ---------- */
+function decoderBase64Utf8(b64){
+  const bin = atob(b64.replace(/\n/g, ""));
+  return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
+}
+async function lireJSONDepot(chemin){
+  const d = etat.depot;
+  const r = d.token
+    ? await fetch(urlApiContenu(chemin) + "?ref=" + encodeURIComponent(d.branche),
+                  { headers: { Authorization: "Bearer " + d.token, Accept: "application/vnd.github.raw+json" }, cache: "no-store" })
+    : await fetch(`https://raw.githubusercontent.com/${encodeURIComponent(d.owner)}/${encodeURIComponent(d.repo)}/${encodeURIComponent(d.branche)}/${chemin}`, { cache: "no-cache" });
+  if(r.status === 404) return null;
+  if(!r.ok) throw new Error("lecture du dépôt impossible (" + r.status + ")");
+  return JSON.parse(await r.text());
+}
+async function ecrireTexteDepot(chemin, texte, message){
+  const d = etat.depot;
+  if(!d.token) throw new Error("aucun token saisi");
+  const entetes = { Authorization: "Bearer " + d.token, Accept: "application/vnd.github+json" };
+  const g = await fetch(urlApiContenu(chemin) + "?ref=" + encodeURIComponent(d.branche), { headers: entetes, cache: "no-store" });
+  let sha, contenu = null;
+  if(g.ok){ const j = await g.json(); sha = j.sha; if(j.content) contenu = decoderBase64Utf8(j.content); }
+  else if(g.status !== 404) throw new Error("lecture du dépôt impossible (" + g.status + ")");
+  const corps = { message, content: base64Utf8(typeof texte === "function" ? texte(contenu) : texte), branch: d.branche };
+  if(sha) corps.sha = sha;
+  const p = await fetch(urlApiContenu(chemin), { method: "PUT", headers: { ...entetes, "Content-Type": "application/json" }, body: JSON.stringify(corps) });
+  if(!p.ok) throw new Error("écriture refusée par GitHub (" + p.status + ")");
+}
+
+let envoiParcoursEnCours = false;
+async function envoyerParcoursEnAttente(){
+  if(envoiParcoursEnCours || !etat.depot.token) return;
+  const att = lireJSON(CLE_PARCOURS_ATTENTE, []);
+  if(!att.length) return;
+  envoiParcoursEnCours = true; etat.erreurParcours = null;
+  try{
+    for(const p of att){
+      await ecrireTexteDepot(`parcours/${p.id}.json`, JSON.stringify(p), `Alentours : parcours ${p.nom}`);
+      await ecrireTexteDepot("parcours/index.json", ancien => {
+        let ix = []; try{ ix = ancien ? JSON.parse(ancien) : []; }catch(e){}
+        ix = ix.filter(e => e.id !== p.id); ix.push(metaParcours(p));
+        return JSON.stringify(ix);
+      }, `Alentours : index des parcours (${p.nom})`);
+      ecrireJSON(CLE_PARCOURS_ATTENTE, lireJSON(CLE_PARCOURS_ATTENTE, []).filter(x => x.id !== p.id));
+      etat.indexParcours = (etat.indexParcours || []).filter(e => e.id !== p.id).concat([metaParcours(p)]);
+    }
+  }catch(e){ etat.erreurParcours = e.message; }
+  finally{ envoiParcoursEnCours = false; majListeParcours(); }
+}
+async function chargerListeParcours(){
+  try{
+    const ix = await lireJSONDepot("parcours/index.json");
+    etat.indexParcours = Array.isArray(ix) ? ix : [];
+    etat.erreurListe = null;
+  }catch(e){ etat.erreurListe = e.message; }
+  majListeParcours();
+}
+
+/* ---------- Parcours de test : Roynac → Montélimar, tronçons de 1 km ---------- */
+function trouverCommune(nom, dep){
+  const c = etat.donnees.fr && etat.donnees.fr.d.find(x => x[0] === nom && x[4] === "Département " + dep);
+  return c ? { lat: c[1], lon: c[2] } : null;
+}
+function reechantillonner(ligne, pasKm){
+  const res = [ligne[0].slice()];
+  let reste = pasKm;
+  for(let i = 1; i < ligne.length; i++){
+    let [la0, lo0] = ligne[i - 1];
+    const [la1, lo1] = ligne[i];
+    let seg = distanceKm(la0, lo0, la1, lo1);
+    while(seg >= reste && seg > 0){
+      const f = reste / seg;
+      la0 = la0 + (la1 - la0) * f; lo0 = lo0 + (lo1 - lo0) * f;
+      res.push([la0, lo0]);
+      seg -= reste; reste = pasKm;
+    }
+    reste -= seg;
+  }
+  const fin = ligne[ligne.length - 1], der = res[res.length - 1];
+  if(distanceKm(der[0], der[1], fin[0], fin[1]) > 0.01) res.push(fin.slice());
+  return res;
+}
+async function obtenirParcoursTest(){
+  const cache = lireJSON(CLE_PARCOURS_TEST, null);
+  if(cache && Array.isArray(cache.points) && cache.points.length > 2) return cache;
+  const A = trouverCommune("Roynac", "26") || { lat: 44.633, lon: 4.933 };
+  const B = trouverCommune("Montélimar", "26") || { lat: 44.558, lon: 4.751 };
+  let ligne = null, type = "à vol d'oiseau";
+  try{
+    const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lon},${A.lat};${B.lon},${B.lat}?overview=full&geometries=geojson`);
+    if(r.ok){
+      const j = await r.json(), c = j.routes && j.routes[0] && j.routes[0].geometry && j.routes[0].geometry.coordinates;
+      if(c && c.length > 1){ ligne = c.map(([lo, la]) => [la, lo]); type = "par la route"; }
+    }
+  }catch(e){}
+  if(!ligne) ligne = [[A.lat, A.lon], [B.lat, B.lon]];
+  const t0 = Date.parse("2026-01-01T09:00:00Z");
+  const pts = reechantillonner(ligne, 1).map(([la, lo], i) => [+la.toFixed(5), +lo.toFixed(5), t0 + i * 60000]); // 1 km par minute
+  const p = { id: "test", test: true, nom: `Test : Roynac → Montélimar (${type})`, pays: "fr",
+              debut: pts[0][2], fin: pts[pts.length - 1][2], km: +longueurKm(pts).toFixed(1), points: pts };
+  if(type === "par la route") ecrireJSON(CLE_PARCOURS_TEST, p); // à vol d'oiseau : on retentera la route plus tard
+  return p;
+}
+
+/* ---------- Onglet Parcours ---------- */
+function majEtatTrajet(){
+  const e = $("etatTrajet"), att = lireJSON(CLE_PARCOURS_ATTENTE, []);
+  let html;
+  if(trajet && trajet.phase === "enregistrement"){
+    const km = longueurKm(trajet.points);
+    html = `<span class="rec">● Enregistrement en cours</span> depuis ${new Date(trajet.debut).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}, ${formatKm(km)}. Il se terminera après 10 min sans avoir parcouru 1 km.`;
+  } else {
+    html = "En veille : l'enregistrement démarre dès que vous avez parcouru 1 km (position réelle).";
+  }
+  if(att.length) html += ` ${att.length} parcours en attente d'envoi` + (etat.depot.token ? (etat.erreurParcours ? ` (${etat.erreurParcours}).` : ".") : " : saisissez un token dans les réglages (dépôt GitHub).");
+  if(etat.erreurListe) html += ` Liste du dépôt illisible (${etat.erreurListe}).`;
+  e.innerHTML = html;
+}
+function majListeParcours(){
+  majEtatTrajet();
+  const ul = $("listeParcours");
+  ul.innerHTML = "";
+  const choisi = etat.parcoursSel ? etat.parcoursSel.p.id : null;
+  const ajouter = (meta, badge, charger, actions) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.className = "itemParcours" + (meta.id === choisi ? " choisi" : "");
+    const titre = document.createElement("b");
+    titre.textContent = meta.nom;
+    if(badge){ const s = document.createElement("span"); s.className = "badge " + badge[0]; s.textContent = badge[1]; titre.appendChild(s); }
+    const det = document.createElement("small");
+    det.textContent = meta.test
+      ? (meta.km ? `${formatKm(meta.km)}, découpé en tronçons de 1 km` : "Par la route si possible, sinon à vol d'oiseau, en tronçons de 1 km")
+      : `${new Date(meta.debut).toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}, ${formatKm(meta.km)}, ${formatDuree(meta.fin - meta.debut)}` +
+        (meta.pays ? ` ${PAYS[meta.pays] ? PAYS[meta.pays].drapeau : ""}` : "");
+    b.append(titre, det);
+    b.addEventListener("click", async () => {
+      b.disabled = true; det.textContent = "Chargement…";
+      try{ const p = await charger(); if(p) choisirParcours(p); else det.textContent = "Parcours introuvable dans le dépôt"; }
+      catch(err){ det.textContent = "Chargement impossible : " + err.message; }
+      b.disabled = false;
+    });
+    li.appendChild(b);
+    if(actions){
+      const zone = document.createElement("div"); zone.className = "actionsParcours";
+      const bR = document.createElement("button"); bR.textContent = "Renommer";
+      const bS = document.createElement("button"); bS.textContent = "Supprimer"; bS.className = "danger";
+      const lancer = async (bouton, fn) => {
+        const txt = bouton.textContent; bouton.disabled = true; bouton.textContent = "…";
+        try{ await fn(); }catch(err){ alert("Opération impossible : " + err.message); }
+        bouton.disabled = false; bouton.textContent = txt;
+      };
+      bR.addEventListener("click", () => {
+        const nom = prompt("Nouveau nom du parcours :", meta.nom);
+        if(nom && nom.trim() && nom.trim() !== meta.nom) lancer(bR, () => actions.renommer(nom.trim()));
+      });
+      bS.addEventListener("click", () => {
+        if(confirm(`Supprimer définitivement le parcours « ${meta.nom} » ?`)) lancer(bS, actions.supprimer);
+      });
+      zone.append(bR, bS); li.appendChild(zone);
+    }
+    ul.appendChild(li);
+  };
+  const test = lireJSON(CLE_PARCOURS_TEST, null);
+  ajouter(test ? metaParcours(test) : { id: "test", test: true, nom: "Test : Roynac → Montélimar", km: 0 }, ["test", "test"], obtenirParcoursTest);
+  const att = lireJSON(CLE_PARCOURS_ATTENTE, []);
+  for(const p of att.slice().reverse()) ajouter(metaParcours(p), ["attente", "à envoyer"], async () => p, {
+    renommer: async nom => modifierParcoursLocal(p.id, x => { x.nom = nom; return x; }),
+    supprimer: async () => modifierParcoursLocal(p.id, () => null)
+  });
+  const ix = (etat.indexParcours || []).filter(m => !att.some(p => p.id === m.id)).sort((a, b) => b.debut - a.debut);
+  for(const m of ix) ajouter(m, null, () => lireJSONDepot(`parcours/${m.id}.json`), {
+    renommer: nom => renommerParcoursDepot(m.id, nom),
+    supprimer: () => supprimerParcoursDepot(m.id)
+  });
+  if(!att.length && !ix.length){
+    const li = document.createElement("li"); li.className = "videParcours";
+    li.textContent = "Aucun parcours enregistré pour l'instant.";
+    ul.appendChild(li);
+  }
+}
+
+/* ---------- Renommer / supprimer ---------- */
+function apresModification(id, nom){
+  const sel = etat.parcoursSel;
+  if(sel && sel.p.id === id){
+    if(nom === null){ quitterParcours(); return; }
+    sel.p.nom = nom; $("nomParcours").textContent = nom;
+  }
+  majListeParcours();
+}
+/* Parcours pas encore envoyé : modifié (ou supprimé si fn renvoie null) sur l'appareil */
+function modifierParcoursLocal(id, fn){
+  const att = lireJSON(CLE_PARCOURS_ATTENTE, []);
+  const res = [];
+  let nom = null;
+  for(const p of att){
+    if(p.id !== id){ res.push(p); continue; }
+    const q = fn(p);
+    if(q){ res.push(q); nom = q.nom; }
+  }
+  ecrireJSON(CLE_PARCOURS_ATTENTE, res);
+  apresModification(id, nom);
+}
+function exigerToken(){
+  if(!etat.depot.token) throw new Error("un token GitHub est nécessaire (Réglages > Dépôt GitHub des données)");
+}
+async function renommerParcoursDepot(id, nom){
+  exigerToken();
+  await ecrireTexteDepot(`parcours/${id}.json`, ancien => {
+    if(!ancien) throw new Error("fichier du parcours introuvable");
+    const o = JSON.parse(ancien); o.nom = nom; return JSON.stringify(o);
+  }, `Alentours : parcours renommé en ${nom}`);
+  await ecrireTexteDepot("parcours/index.json", ancien => {
+    const ix = ancien ? JSON.parse(ancien) : [];
+    for(const e of ix) if(e.id === id) e.nom = nom;
+    return JSON.stringify(ix);
+  }, `Alentours : index des parcours (renommage)`);
+  for(const e of etat.indexParcours || []) if(e.id === id) e.nom = nom;
+  apresModification(id, nom);
+}
+async function supprimerParcoursDepot(id){
+  exigerToken();
+  const d = etat.depot, chemin = `parcours/${id}.json`;
+  const entetes = { Authorization: "Bearer " + d.token, Accept: "application/vnd.github+json" };
+  const g = await fetch(urlApiContenu(chemin) + "?ref=" + encodeURIComponent(d.branche), { headers: entetes, cache: "no-store" });
+  if(g.ok){
+    const { sha } = await g.json();
+    const r = await fetch(urlApiContenu(chemin), { method: "DELETE", headers: { ...entetes, "Content-Type": "application/json" },
+                                                 body: JSON.stringify({ message: `Alentours : suppression du parcours ${id}`, sha, branch: d.branche }) });
+    if(!r.ok) throw new Error("suppression refusée par GitHub (" + r.status + ")");
+  } else if(g.status !== 404) throw new Error("lecture du dépôt impossible (" + g.status + ")");
+  await ecrireTexteDepot("parcours/index.json", ancien => {
+    const ix = ancien ? JSON.parse(ancien) : [];
+    return JSON.stringify(ix.filter(e => e.id !== id));
+  }, `Alentours : index des parcours (suppression)`);
+  etat.indexParcours = (etat.indexParcours || []).filter(e => e.id !== id);
+  apresModification(id, null);
+}
+
+/* ---------- Relecture d'un parcours ---------- */
+function choisirParcours(p){
+  const pts = p.points, cum = [0];
+  for(let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + distanceKm(pts[i-1][0], pts[i-1][1], pts[i][0], pts[i][1]));
+  etat.parcoursSel = { p, cum };
+  if(p.pays && PAYS[p.pays] && p.pays !== etat.pays){
+    document.querySelectorAll('input[name="pays"]').forEach(r => { r.checked = r.value === p.pays; });
+    changerPays(p.pays);
+  }
+  etat.mode = "parcours";
+  $("nomParcours").textContent = p.nom;
+  $("curseurParcours").value = 0;
+  positionnerSurParcours(0);
+  majListeParcours();
+  montrerVue("vueCarte");
+  setTimeout(() => {
+    dessinerParcoursCarte();
+    if(etat.carte && pts.length > 1) etat.carte.fitBounds(pts.map(q => [q[0], q[1]]), { padding: [30, 30] });
+  }, 120);
+}
+function positionnerSurParcours(fraction){
+  const sel = etat.parcoursSel;
+  if(!sel) return;
+  const { p, cum } = sel, pts = p.points, total = cum[cum.length - 1] || 0, d = fraction * total;
+  let i = 0;
+  while(i < cum.length - 2 && cum[i + 1] < d) i++;
+  const j = Math.min(i + 1, pts.length - 1), seg = cum[j] - cum[i], f = seg > 0 ? (d - cum[i]) / seg : 0;
+  etat.posParcours = { lat: pts[i][0] + (pts[j][0] - pts[i][0]) * f, lon: pts[i][1] + (pts[j][1] - pts[i][1]) * f };
+  if(j > i && seg > 0) etat.capParcours = cap(pts[i][0], pts[i][1], pts[j][0], pts[j][1]);
+  $("kmParcours").textContent = `${formatKm(d)} / ${formatKm(total)}`;
+  rafraichir(false);
+}
+function dessinerParcoursCarte(){
+  if(!etat.carte || !etat.coucheParcours) return;
+  etat.coucheParcours.clearLayers();
+  const sel = etat.parcoursSel;
+  if(!sel) return;
+  const ll = sel.p.points.map(q => [q[0], q[1]]);
+  L.polyline(ll, { color: couleur("moi"), weight: 5, opacity: .65, interactive: false }).addTo(etat.coucheParcours);
+  L.circleMarker(ll[0], { radius: 6, color: "#fff", weight: 2, fillColor: "#2E9D57", fillOpacity: 1, interactive: false })
+    .bindTooltip("Départ", { direction: "top", className: "etq" }).addTo(etat.coucheParcours);
+  L.circleMarker(ll[ll.length - 1], { radius: 6, color: "#fff", weight: 2, fillColor: couleur("ville"), fillOpacity: 1, interactive: false })
+    .bindTooltip("Arrivée", { direction: "top", className: "etq" }).addTo(etat.coucheParcours);
+}
+function oublierParcoursChoisi(){
+  etat.parcoursSel = null;
+  if(etat.coucheParcours) etat.coucheParcours.clearLayers();
+}
+function quitterParcours(){
+  revenirReel();
+  majListeParcours();
 }
 
 /* ---------- Historique des versions ---------- */
@@ -1856,7 +2308,11 @@ function demarrer(){
 
   majSource();
   demarrerGps();
-  activerDonnees(etat.pays, false, false);
+  $("curseurParcours").addEventListener("input", e => positionnerSurParcours(+e.target.value / 1000));
+  $("btnQuitterParcours").addEventListener("click", quitterParcours);
+  $("btnActualiserParcours").addEventListener("click", () => { chargerListeParcours(); envoyerParcoursEnAttente(); });
+  // un parcours laissé en cours (application fermée) est clos s'il est terminé, une fois les lieux chargés pour le nommer
+  activerDonnees(etat.pays, false, false).then(() => { verifierFinTrajet(); envoyerParcoursEnAttente(); });
   setInterval(surveillerGps, 1000);
   document.addEventListener("visibilitychange", () => { if(!document.hidden) relancerGps("retour dans l'application"); });
   $("btnEtatGps").addEventListener("click", () => { majPanneauGps(); $("dlgGps").showModal(); });
